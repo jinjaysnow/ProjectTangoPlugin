@@ -126,7 +126,7 @@ public:
 public:
 	float GetMetersToWorldScale();
 	//Tango Camera Intrinsics defined here because we need the intrinsics to start the ImageDevice!
-	FTangoCameraIntrinsics GetCameraIntrinsics(TEnumAsByte<ETangoCameraType::Type> CameraID);
+	FTangoCameraIntrinsics GetCameraIntrinsics(ETangoCameraType CameraID);
 
 	//Area accessibility functions. Found in TangoDeviceADF.cpp
 	FString GetLoadedAreaDescriptionUUID();

@@ -98,7 +98,9 @@ bool FTangoViewExtension::IdentifyViewWithCameraComponent(const FSceneView* InVi
 			}
 		}
 	}
-	UE_LOG(TangoPlugin, Warning, TEXT("FTangoViewExtension::IdentifyViewWithCameraComponent: Did not identify Actor"));
+#if !WITH_EDITOR
+	//UE_LOG(TangoPlugin, Warning, TEXT("FTangoViewExtension::IdentifyViewWithCameraComponent: Did not identify Actor"));
+#endif
 	return false;
 }
 
@@ -159,7 +161,9 @@ const bool FTangoViewExtension::GetLateUpdateTransform(FTransform& Transform,int
 			return bIsNew;
 		}
 	}
-	UE_LOG(TangoPlugin, Warning, TEXT("FTangoViewExtension::GetLateUpdateTransform: Failed because pose is invalid!"));
+#if !WITH_EDITOR
+	//UE_LOG(TangoPlugin, Warning, TEXT("FTangoViewExtension::GetLateUpdateTransform: Failed because pose is invalid!"));
+#endif
 	Transform = FTransform::Identity;
 	return false;
 }
@@ -239,7 +243,8 @@ void FTangoViewExtension::PreRenderView_RenderThread(FRHICommandListImmediate& R
 			if (ARComponent->WantToDoAR())
 			{
 				InView.ProjectionMatrixUnadjustedForRHI = TangoARHelpers::GetARProjectionMatrix();
-				InView.ViewMatrices.ProjMatrix = AdjustProjectionMatrixForRHI(InView.ProjectionMatrixUnadjustedForRHI);
+				// major hack:
+				*(FMatrix*)&InView.ViewMatrices.GetProjectionMatrix() = AdjustProjectionMatrixForRHI(InView.ProjectionMatrixUnadjustedForRHI);
 			}
 			InView.UpdateViewMatrix();
 			FMatrix LateUpdateMatrix = LateUpdateTransform.ToMatrixWithScale();
@@ -258,7 +263,8 @@ void FTangoViewExtension::PreRenderView_RenderThread(FRHICommandListImmediate& R
 		{
 			UE_LOG(TangoPlugin, Warning, TEXT("FTangoViewExtension::PreRenderView_RenderThread: No Stride could be found!"));
 			InView.ProjectionMatrixUnadjustedForRHI = TangoARHelpers::GetARProjectionMatrix();
-			InView.ViewMatrices.ProjMatrix = AdjustProjectionMatrixForRHI(InView.ProjectionMatrixUnadjustedForRHI);
+			// major hack:
+			*(FMatrix*)&InView.ViewMatrices.GetProjectionMatrix() = AdjustProjectionMatrixForRHI(InView.ProjectionMatrixUnadjustedForRHI);
 
 			InView.UpdateViewMatrix();
 		}
@@ -267,7 +273,8 @@ void FTangoViewExtension::PreRenderView_RenderThread(FRHICommandListImmediate& R
 	{
 		UE_LOG(TangoPlugin, Warning, TEXT("FTangoViewExtension::PreRenderView_RenderThread: InView.Family is nullptr!"));
 		InView.ProjectionMatrixUnadjustedForRHI = TangoARHelpers::GetARProjectionMatrix();
-		InView.ViewMatrices.ProjMatrix = AdjustProjectionMatrixForRHI(InView.ProjectionMatrixUnadjustedForRHI);
+		// major hack:
+		*(FMatrix*)&InView.ViewMatrices.GetProjectionMatrix() = AdjustProjectionMatrixForRHI(InView.ProjectionMatrixUnadjustedForRHI);
 		InView.UpdateViewMatrix();
 	}
 

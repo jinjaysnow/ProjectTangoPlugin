@@ -43,7 +43,8 @@ extern "C"
 
         //Push the event into the events buffer
         FTangoEvent UEvent;
-        UEvent.Type = static_cast<ETangoEventType::Type>(TANGO_EVENT_GENERAL);
+
+        UEvent.Type = static_cast<ETangoEventType>(TANGO_EVENT_GENERAL);
         UEvent.Key = ETangoEventKeyType::EXPORT_RESULT;
         
         //Convert from Android return convention (-1, 0, 1) to Unreal enum convention (0, 1, 2)
@@ -60,7 +61,7 @@ extern "C"
         
         //Push the event into the events buffer
         FTangoEvent UEvent;
-        UEvent.Type = static_cast<ETangoEventType::Type>(TANGO_EVENT_GENERAL);
+        UEvent.Type = static_cast<ETangoEventType>(TANGO_EVENT_GENERAL);
         UEvent.Key = ETangoEventKeyType::IMPORT_RESULT;
         
         //Convert from Android return convention (-1, 0, 1) to Unreal enum convention (0, 1, 2)

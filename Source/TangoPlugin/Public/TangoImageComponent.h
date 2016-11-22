@@ -17,12 +17,13 @@ limitations under the License.*/
 #include "Components/ActorComponent.h"
 #include "TangoImageComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTangoImageAvailable, float, Timestamp);
 
 UCLASS(ClassGroup = Tango, Blueprintable, meta = (BlueprintSpawnableComponent))
 class TANGOPLUGIN_API UTangoImageComponent : public UActorComponent
 {
 	GENERATED_BODY()
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTangoImageAvailable, float, Timestamp);
 public:
 	UTangoImageComponent();
 

@@ -104,7 +104,7 @@ void UTangoDeviceMotion::OnPoseAvailable(const TangoPoseData* Pose)
 FTangoPoseData UTangoDeviceMotion::GetPoseAtTime(FTangoCoordinateFramePair FrameOfReference, float Timestamp)
 {
     //Prevent Tango calls before the system is ready, return null data instead
-    if(!(UTangoDevice::Get().IsTangoServiceRunning()))
+    if(!(UTangoDevice::Get().IsTangoServiceRunning()) || !IsLocalized())
     {
         return FTangoPoseData();
     }

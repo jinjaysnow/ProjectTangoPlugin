@@ -104,7 +104,7 @@ FTangoAreaDescriptionMetaData UTangoDevice::GetMetaData(FString UUID, bool& bIsS
 	if (TangoService_getAreaDescriptionMetadata(ConvertedUUIDKeyCString, &Metadata) != TANGO_SUCCESS)
 	{
 		bIsSuccessful = false;
-		UE_LOG(TangoPlugin, Error, TEXT("TangoDeviceAreaLearning::GetMetaData: Could not get Metadata object."));
+		UE_LOG(TangoPlugin, Error, TEXT("TangoDeviceAreaLearning::GetMetaData: Could not get Metadata object for %s"), *UUID);
 		return FTangoAreaDescriptionMetaData();
 	}
 
@@ -120,21 +120,22 @@ FTangoAreaDescriptionMetaData UTangoDevice::GetMetaData(FString UUID, bool& bIsS
 
 				double* TVP = reinterpret_cast<double*>(TransformValuePointer);
 				//Read in transformation
-				Result.TransformationX = TVP[0];
-				Result.TransformationY = TVP[1];
-				Result.TransformationZ = TVP[2];
-				Result.TransformationQX = TVP[3];
-				Result.TransformationQY = TVP[4];
-				Result.TransformationQZ = TVP[5];
-				Result.TransformationQW = TVP[6];
-
-				//Read in milliseconds since epoch
+                int32 i;
+                for (i = 0; i < 3; i++) {
+                    Result.Position[i] = TVP[i];
+                }
+				UE_LOG(TangoPlugin, Log, TEXT("Area description ecef pos: %f, %f, %f, "), TVP[0], TVP[1], TVP[2]);
+                for (int32 j = 0; j < 4; j++) {
+                    Result.Orientation[j] = TVP[i+j];
+                }
+				UE_LOG(TangoPlugin, Log, TEXT("Area description ecef quat: %f, %f, %f, %f "), TVP[3], TVP[4], TVP[5], TVP[6]);
+				//Read in milliseconds since epoch 
 				uint64 NativeInteger = 0;
 				NativeInteger = *(reinterpret_cast<uint64*>(DatePointer));
-				int32 ConvertedInteger = static_cast<int32>(NativeInteger);
-				Result.MillisecondsSinceUnixEpoch = ConvertedInteger;
+				Result.MillisecondsSinceUnixEpoch = NativeInteger;
 				bIsSuccessful = true;
 			}
+
 			else
 			{
 				//Result was not successful!
@@ -185,13 +186,13 @@ void UTangoDevice::SaveMetaData(FString UUID, FTangoAreaDescriptionMetaData NewM
     uint TransformationArrayByteCount = (uint)(8 * 7);
     
     //Translation
-    TransformationElements[0] = NewMetadata.TransformationX;
-    TransformationElements[1] = NewMetadata.TransformationY;
-    TransformationElements[2] = NewMetadata.TransformationZ;
-    TransformationElements[3] = NewMetadata.TransformationQX;
-    TransformationElements[4] = NewMetadata.TransformationQY;
-    TransformationElements[5] = NewMetadata.TransformationQZ;
-    TransformationElements[6] = NewMetadata.TransformationQW;
+    TransformationElements[0] = NewMetadata.Position[0];
+    TransformationElements[1] = NewMetadata.Position[1];
+    TransformationElements[2] = NewMetadata.Position[2];
+    TransformationElements[3] = NewMetadata.Orientation[0];
+    TransformationElements[4] = NewMetadata.Orientation[1];
+    TransformationElements[5] = NewMetadata.Orientation[2];
+    TransformationElements[6] = NewMetadata.Orientation[3];
     
     if (TangoService_getAreaDescriptionMetadata(ConvertedUUIDValue, &Metadata) != TANGO_SUCCESS)
     {

@@ -24,7 +24,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTangoDisconnect);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FTangoEventDelegate,FTangoEvent,Event);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FTangoResultDelegate, ETangoRequestResult::Type, Result);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FTangoResultDelegate, ETangoRequestResult, Result);
 
 UCLASS(ClassGroup = Tango, meta = (BlueprintSpawnableComponent))
 class TANGOPLUGIN_API UTangoEventComponent : public UActorComponent

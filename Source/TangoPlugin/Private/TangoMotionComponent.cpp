@@ -53,7 +53,7 @@ FTransform UTangoMotionComponent::GetComponentTransformAtTime(float Timestamp)
 	return CalcNewComponentToWorld(FTransform(Pose.QuatRotation, Pose.Position,RelativeScale3D));
 }
 
-TEnumAsByte<ETangoPoseStatus::Type> UTangoMotionComponent::GetTangoPoseStatus(float& Timestamp)
+ETangoPoseStatus UTangoMotionComponent::GetTangoPoseStatus(float& Timestamp)
 {
 	FTangoPoseData LatestPose = UTangoDevice::Get().GetTangoDeviceMotionPointer() != nullptr ? UTangoDevice::Get().GetTangoDeviceMotionPointer()->GetPoseAtTime(MotionComponentFrameOfReference, 0) : FTangoPoseData();
 	Timestamp = LatestPose.Timestamp;
@@ -74,7 +74,7 @@ bool UTangoMotionComponent::IsLocalized()
 	}
 	else
 	{
-		UE_LOG(TangoPlugin, Warning, TEXT("UTangoAreaLearningComponent::IsLocalized: Tango Motion tracking not enabled"));
+		UE_LOG(TangoPlugin, Warning, TEXT("UTangoMotionComponent::IsLocalized: Tango Motion tracking not enabled"));
 		return false;
 	}
 }
@@ -95,7 +95,9 @@ void UTangoMotionComponent::TickComponent(float DeltaTime, enum ELevelTick TickT
 	}
 	else
 	{
+#if PLATFORM_ANDROID
 		UE_LOG(TangoPlugin, Warning, TEXT("UTangoMotionComponent::LateUpdate: Could not update transfrom because Tango Service is not connect or has motion tracking disabled!"));
+#endif
 	}
 
 	if (!ViewExtension.IsValid() && GEngine)

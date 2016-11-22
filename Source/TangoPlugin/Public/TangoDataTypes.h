@@ -1,6 +1,6 @@
 /*Copyright 2016 Google
 Author: Opaque Media Group
- 
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -21,28 +21,22 @@ limitations under the License.*/
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 UENUM(BlueprintType)
-namespace ETangoPoseStatus
+enum class ETangoPoseStatus : uint8
 {
-	enum Type
-	{
-		INITIALIZING	UMETA(DisplayName = "Tango pose initializing"),
-		VALID			UMETA(DisplayName = "Tango pose valid"),
-		INVALID			UMETA(DisplayName = "Tango pose invalid"),
-		UNKNOWN			UMETA(DisplayName = "Tango pose unknown")
-	};
-}
+	INITIALIZING	UMETA(DisplayName = "Tango pose initializing"),
+	VALID			UMETA(DisplayName = "Tango pose valid"),
+	INVALID			UMETA(DisplayName = "Tango pose invalid"),
+	UNKNOWN			UMETA(DisplayName = "Tango pose unknown")
+};
 
 UENUM(BlueprintType)
-namespace ETangoPositionContext
+enum class ETangoPositionContext : uint8
 {
-	enum Type
-	{
-		START_TO_DEVICE UMETA(DisplayName = "Device from Service Start"),
-		ADF_TO_DEVICE	UMETA(DisplayName = "Device from Area Description"),
-		ADF_TO_START	UMETA(DisplayName = "Service Start from Area Description"),
-		PREV_TO_DEVICE	UMETA(DisplayName = "Device from Previous Frame")
-	};
-}
+	START_TO_DEVICE UMETA(DisplayName = "Device from Service Start"),
+	ADF_TO_DEVICE	UMETA(DisplayName = "Device from Area Description"),
+	ADF_TO_START	UMETA(DisplayName = "Service Start from Area Description"),
+	PREV_TO_DEVICE	UMETA(DisplayName = "Device from Previous Frame")
+};
 
 /*
 	ETangoCoordinateFrameType
@@ -50,164 +44,134 @@ namespace ETangoPositionContext
 	Can be grouped into pairs using the FTangoCoordinateFramePair structure;
 */
 UENUM(BlueprintType)
-namespace ETangoCoordinateFrameType
+enum class ETangoCoordinateFrameType : uint8
 {
-
-	enum Type
-	{
-		GLOBAL_WGS84			UMETA(DisplayName = "Global: WGS84"),
-		AREA_DESCRIPTION		UMETA(DisplayName = "Area Description"),
-		START_OF_SERVICE		UMETA(DisplayName = "Start of Service"),
-		PREVIOUS_DEVICE_POSE	UMETA(DisplayName = "Previous Device Pose"),
-		DEVICE					UMETA(DisplayName = "Device"),
-		IMU						UMETA(DisplayName = "IMU"),
-		DISPLAY					UMETA(DisplayName = "Display"), 
-		CAMERA_COLOR			UMETA(DisplayName = "Camera: Colour"),
-		CAMERA_DEPTH			UMETA(DisplayName = "Camera: Depth"),
-		CAMERA_FISHEYE			UMETA(DisplayName = "Camera: Fisheye")
-	};
-}
+	GLOBAL_WGS84			UMETA(DisplayName = "Global: WGS84"),
+	AREA_DESCRIPTION		UMETA(DisplayName = "Area Description"),
+	START_OF_SERVICE		UMETA(DisplayName = "Start of Service"),
+	PREVIOUS_DEVICE_POSE	UMETA(DisplayName = "Previous Device Pose"),
+	DEVICE					UMETA(DisplayName = "Device"),
+	IMU						UMETA(DisplayName = "IMU"),
+	DISPLAY					UMETA(DisplayName = "Display"),
+	CAMERA_COLOR			UMETA(DisplayName = "Camera: Colour"),
+	CAMERA_DEPTH			UMETA(DisplayName = "Camera: Depth"),
+	CAMERA_FISHEYE			UMETA(DisplayName = "Camera: Fisheye")
+};
 
 /*
 	ETangoPermissionType
 */
 UENUM(BlueprintType)
-namespace ETangoPermissionType
+enum class ETangoPermissionType : uint8
 {
-	enum Type
-	{
-		AREA_LEARNING	UMETA(DisplayName = "Area Learning"),
-		ADF_LOAD_SAVE	UMETA(DisplayName = "Area Description File Load/Save"),
-		MOTION_TRACKING	UMETA(DisplayName = "IMU")
-	};
-}
+	AREA_LEARNING	UMETA(DisplayName = "Area Learning"),
+	ADF_LOAD_SAVE	UMETA(DisplayName = "Area Description File Load/Save"),
+	MOTION_TRACKING	UMETA(DisplayName = "IMU")
+};
 
 /*
 	ETangoCalibrationType
 */
 UENUM(BlueprintType)
-namespace ETangoCalibrationType
+enum class ETangoCalibrationType : uint8
 {
-	enum Type
-	{
-		EQUIDISTANT				UMETA(DisplayName = "Equidistant"),
-		POLYNOMIAL_2_PARAMETERS	UMETA(DisplayName = "Polynomial; 2 parameters"),
-		POLYNOMIAL_3_PARAMETERS	UMETA(DisplayName = "Polynomial; 3 parameters"),
-		POLYNOMIAL_5_PARAMETERS	UMETA(DisplayName = "Polynomial; 5 parameters"),
-		UNKNOWN					UMETA(DisplayName = "Unknown")
-	};
-}
+	EQUIDISTANT				UMETA(DisplayName = "Equidistant"),
+	POLYNOMIAL_2_PARAMETERS	UMETA(DisplayName = "Polynomial; 2 parameters"),
+	POLYNOMIAL_3_PARAMETERS	UMETA(DisplayName = "Polynomial; 3 parameters"),
+	POLYNOMIAL_5_PARAMETERS	UMETA(DisplayName = "Polynomial; 5 parameters"),
+	UNKNOWN					UMETA(DisplayName = "Unknown")
+};
 
 /*
 	ETangoDatasetRecordingMode
 */
 UENUM(BlueprintType)
-namespace ETangoDatasetRecordingMode
+enum class ETangoDatasetRecordingMode : uint8
 {
-	enum Type
-	{
-		MOTION_TRACKING			UMETA(DisplayName = "Motion Tracking"),
-		SCENE_RECONSTRUCTION	UMETA(DisplayName = "Scene Reconstruction")
-	};
-}
+	MOTION_TRACKING			UMETA(DisplayName = "Motion Tracking"),
+	SCENE_RECONSTRUCTION	UMETA(DisplayName = "Scene Reconstruction")
+};
 
 /*
 	ETangoCameraType
 */
 UENUM(BlueprintType)
-namespace ETangoCameraType
+enum class ETangoCameraType : uint8
 {
-	enum Type
-	{
-		COLOR	UMETA(DisplayName = "Color Camera"),
-		DEPTH	UMETA(DisplayName = "Depth Camera"),
-		FISHEYE	UMETA(DisplayName = "Fisheye Camera"),
-		RGBR	UMETA(DisplayName = "RGBR Camera"),
-	};
-}
+	COLOR	UMETA(DisplayName = "Color Camera"),
+	DEPTH	UMETA(DisplayName = "Depth Camera"),
+	FISHEYE	UMETA(DisplayName = "Fisheye Camera"),
+	RGBIR	UMETA(DisplayName = "RGBIR Camera"),
+};
 
 /*
 	ETangoConfigType
 */
 UENUM(BlueprintType)
-namespace ETangoConfigType
+enum class ETangoConfigType : uint8
 {
-	enum Type
-	{
-		AREA_DESCRIPTION	UMETA(DisplayName = "Area Description"),
-		CURRENT				UMETA(DisplayName = "Current"),
-		DEFAULT				UMETA(DisplayName = "Default"),
-		MOTION_TRACKING		UMETA(DisplayName = "Motion Tracking"),
-		RUNTIME				UMETA(DisplayName = "Runtime")
-	};
-}
+	AREA_DESCRIPTION	UMETA(DisplayName = "Area Description"),
+	CURRENT				UMETA(DisplayName = "Current"),
+	DEFAULT				UMETA(DisplayName = "Default"),
+	MOTION_TRACKING		UMETA(DisplayName = "Motion Tracking"),
+	RUNTIME				UMETA(DisplayName = "Runtime")
+};
 
 /*
 	ETangoEventType
 */
 UENUM(BlueprintType)
-namespace ETangoEventType
+enum class ETangoEventType : uint8
 {
-	enum Type 
-	{
-		AREA_LEARNING		UMETA(DisplayName = "Area Learning Event"),
-		COLOR_CAMERA		UMETA(DisplayName = "Color Camera Event"),
-		FEATURE_TRACKING	UMETA(DisplayName = "Feature Tracking Event"),
-		FISHEYE_CAMERA		UMETA(DisplayName = "Fisheye Camera Event"),
-		GENERAL				UMETA(DisplayName = "General Event"),
-		IMU					UMETA(DisplayName = "IMU Event"),
-		UNKNOWN				UMETA(DisplayName = "Unknown Event")
-	};
-}
+	AREA_LEARNING		UMETA(DisplayName = "Area Learning Event"),
+	COLOR_CAMERA		UMETA(DisplayName = "Color Camera Event"),
+	FEATURE_TRACKING	UMETA(DisplayName = "Feature Tracking Event"),
+	FISHEYE_CAMERA		UMETA(DisplayName = "Fisheye Camera Event"),
+	GENERAL				UMETA(DisplayName = "General Event"),
+	IMU					UMETA(DisplayName = "IMU Event"),
+	UNKNOWN				UMETA(DisplayName = "Unknown Event")
+};
 
 /*
 	ETangoEventValue
 */
 UENUM(BlueprintType)
-namespace ETangoEventValue
+enum class ETangoEventValue : uint8
 {
-	enum Type
-	{
-		SERVICE_FAULT		UMETA(DisplayName = "Tango Service Fault")
-	};
-}
+	SERVICE_FAULT		UMETA(DisplayName = "Tango Service Fault")
+};
+
 /*
 	ETangoEventKeyType
 */
 UENUM(BlueprintType)
-namespace ETangoEventKeyType
+enum class ETangoEventKeyType : uint8
 {
-	enum Type
-	{
-		KEY_AREA_DESCRIPTION_SAVE_PROGRESS		UMETA(DisplayName = "Area Description Save Progress"),
-		KEY_SERVICE_EXCEPTION					UMETA(DisplayName = "Service Exception"),
-		DESCRIPTION_COLOR_OVER_EXPOSED			UMETA(DisplayName = "Colour Over Exposed"),
-		DESCRIPTION_COLOR_UNDER_EXPOSED			UMETA(DisplayName = "Colour Under Exposed"),
-		DESCRIPTION_FISHEYE_OVER_EXPOSED		UMETA(DisplayName = "Fisheye Over Exposed"),
-		DESCRIPTION_FISHEYE_UNDER_EXPOSED		UMETA(DisplayName = "Fisheye Under Exposed"),
-		DESCRIPTION_TOO_FEW_FEATURES			UMETA(DisplayName = "Too Few Features Tracked"),
-		UNKOWN									UMETA(DisplayName = "Unkown Event"),
-        IMPORT_RESULT                           UMETA(DisplayName = "Import Completed"),
-        EXPORT_RESULT                           UMETA(DisplayName = "Import Completed")
-	};
-}
+	KEY_AREA_DESCRIPTION_SAVE_PROGRESS		UMETA(DisplayName = "Area Description Save Progress"),
+	KEY_SERVICE_EXCEPTION					UMETA(DisplayName = "Service Exception"),
+	DESCRIPTION_COLOR_OVER_EXPOSED			UMETA(DisplayName = "Colour Over Exposed"),
+	DESCRIPTION_COLOR_UNDER_EXPOSED			UMETA(DisplayName = "Colour Under Exposed"),
+	DESCRIPTION_FISHEYE_OVER_EXPOSED		UMETA(DisplayName = "Fisheye Over Exposed"),
+	DESCRIPTION_FISHEYE_UNDER_EXPOSED		UMETA(DisplayName = "Fisheye Under Exposed"),
+	DESCRIPTION_TOO_FEW_FEATURES			UMETA(DisplayName = "Too Few Features Tracked"),
+	UNKOWN									UMETA(DisplayName = "Unkown Event"),
+	IMPORT_RESULT                           UMETA(DisplayName = "Import Completed"),
+	EXPORT_RESULT                           UMETA(DisplayName = "Import Completed")
+};
 
 
 /*
 	ETangoRequestResult
  */
 UENUM(BlueprintType)
-namespace ETangoRequestResult
+enum class ETangoRequestResult : uint8
 {
-    enum Type
-    {
-        Success		UMETA(DisplayName = "Success- user agrees."),
-        Cancelled	UMETA(DisplayName = "Cancelled- user has cancelled the request."),
-        Denied		UMETA(DisplayName = "Denied- user does not agree.")
-    };
-}
+	Success		UMETA(DisplayName = "Success- user agrees."),
+	Cancelled	UMETA(DisplayName = "Cancelled- user has cancelled the request."),
+	Denied		UMETA(DisplayName = "Denied- user does not agree.")
+};
 
-	
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //TANGO PLUGIN DATA STRUCTURES BEGIN HERE
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -222,10 +186,10 @@ struct TANGOPLUGIN_API FTangoEvent
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Tango event type"))
-		TEnumAsByte<ETangoEventKeyType::Type> Key;
+		ETangoEventKeyType Key;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Information on which Tango subsystem fired the event"))
-		TEnumAsByte<ETangoEventType::Type> Type;
+		ETangoEventType Type;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Message from the Tango device"))
 		FString Message;
@@ -245,16 +209,16 @@ struct TANGOPLUGIN_API FTangoCoordinateFramePair
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Source frame of reference"))
-		TEnumAsByte<ETangoCoordinateFrameType::Type> BaseFrame;
+		ETangoCoordinateFrameType BaseFrame;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Target frame of reference"))
-		TEnumAsByte<ETangoCoordinateFrameType::Type> TargetFrame;
+		ETangoCoordinateFrameType TargetFrame;
 
 	//Assume a valid pairing- the frame pair should not default to the first elements of the enumeration
-	FTangoCoordinateFramePair(const TEnumAsByte<ETangoCoordinateFrameType::Type> NewBaseFrame = (ETangoCoordinateFrameType::START_OF_SERVICE),
-		const TEnumAsByte<ETangoCoordinateFrameType::Type> NewTargetFrame = (ETangoCoordinateFrameType::DEVICE));
+	FTangoCoordinateFramePair(const ETangoCoordinateFrameType NewBaseFrame = (ETangoCoordinateFrameType::START_OF_SERVICE),
+		const ETangoCoordinateFrameType NewTargetFrame = (ETangoCoordinateFrameType::DEVICE));
 
-	friend bool operator== (const FTangoCoordinateFramePair& A,const FTangoCoordinateFramePair& B)
+	friend bool operator== (const FTangoCoordinateFramePair& A, const FTangoCoordinateFramePair& B)
 	{
 		return A.BaseFrame == B.BaseFrame && A.TargetFrame == B.TargetFrame;
 	}
@@ -325,6 +289,9 @@ struct TANGOPLUGIN_API FTangoConfig
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango")
 		bool bEnableAutoRecovery;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Whether to use the cloud ADF service"))
+		bool bUseCloudAdf;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Allow for activation of color camera"))
 		bool bEnableColorCameraCapabilities;
 
@@ -339,7 +306,7 @@ struct TANGOPLUGIN_API FTangoConfig
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Wether ADF learning capabilities should be enabled"))
 		bool bEnableLearningMode;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Should low latency IMU be activated"))
 		bool bLowLatencyIMUIntegration;
 
@@ -360,6 +327,7 @@ struct TANGOPLUGIN_API FTangoConfig
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "The scaling factor from Tango coordinates (meters) to Unreal coordiantes"))
 		float MetersToWorldScale = 100.0f;
+
 };
 
 /*
@@ -371,10 +339,10 @@ USTRUCT(BlueprintType)
 struct TANGOPLUGIN_API FTangoPoseData
 {
 	GENERATED_USTRUCT_BODY()
-	//@NOTE: Accuracy will be supported in a future update of the Tango API
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango")
-	//	float Accuracy;
-	
+		//@NOTE: Accuracy will be supported in a future update of the Tango API
+		//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango")
+		//	float Accuracy;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Position in the current frame of reference"))
 		FVector Position;
 
@@ -389,18 +357,18 @@ struct TANGOPLUGIN_API FTangoPoseData
 	//@NOTE: Confidence will be supported in a future update of the Tango API
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango")
 	//	int32 Confidence;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Frame of reference of this pose"))
 		FTangoCoordinateFramePair FrameOfReference;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Status code of this pose"))
-		TEnumAsByte<ETangoPoseStatus::Type> StatusCode = ETangoPoseStatus::UNKNOWN;
+		ETangoPoseStatus StatusCode = ETangoPoseStatus::UNKNOWN;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Pose time in seconds since the device was started"))
 		float Timestamp;
 
 	FTangoPoseData(FVector NewPosition = FVector(), FRotator NewRotation = FRotator(), FQuat NewQuatRotation = FQuat(), FTangoCoordinateFramePair NewFrameOfReference = FTangoCoordinateFramePair(),
-		TEnumAsByte<ETangoPoseStatus::Type> NewStatusCode = ETangoPoseStatus::UNKNOWN, float NewTimestamp = 0.0f);
+		ETangoPoseStatus NewStatusCode = ETangoPoseStatus::UNKNOWN, float NewTimestamp = 0.0f);
 };
 
 /*
@@ -413,10 +381,10 @@ struct TANGOPLUGIN_API FTangoCameraIntrinsics
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tango", meta = (ToolTip = "Calibration type of the camera"))
-		TEnumAsByte<ETangoCalibrationType::Type> CalibrationType;
+		ETangoCalibrationType CalibrationType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Determines to which camera these intrinsics belong"))
-		TEnumAsByte<ETangoCameraType::Type> CameraID;
+		ETangoCameraType CameraID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Horizontal center offset in pixels"))
 		int32 Cx;
@@ -429,7 +397,7 @@ struct TANGOPLUGIN_API FTangoCameraIntrinsics
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Horizontal focal length in pixels"))
 		float Fx;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Vertical focal length in pixels"))
 		float Fy;
 
@@ -448,28 +416,47 @@ USTRUCT(BlueprintType)
 struct TANGOPLUGIN_API FTangoAreaDescriptionMetaData
 {
 	GENERATED_USTRUCT_BODY()
-		
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "File name of the ADF file"))
-		FString Filename;
+	FString Filename;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "When the ADF was created"))
-		int32 MillisecondsSinceUnixEpoch;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Information where on the world the ADF was created"))
-		float TransformationX;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Information where on the world the ADF was created"))
-		float TransformationY;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Information where on the world the ADF was created"))
-		float TransformationZ;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Information where on the world the ADF was created"))
-		float TransformationQX;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Information where on the world the ADF was created"))
-		float TransformationQY;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Information where on the world the ADF was created"))
-		float TransformationQZ;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Information where on the world the ADF was created"))
-		float TransformationQW;
+	uint64 MillisecondsSinceUnixEpoch;
 
-	FTangoAreaDescriptionMetaData(const FString InFileName, const int32 InMillisecondsSinceUnixEpoch, const FTransform InTransformation);
+	double Position[3];
+	double Orientation[4];
+
+	FTangoAreaDescriptionMetaData(const FString InFileName, const int64 InMillisecondsSinceUnixEpoch, double const InPosition[], double const InOrientation[]);
 	FTangoAreaDescriptionMetaData() {};
 };
+
+UENUM(BlueprintType)
+enum class ETangoImageFormat : uint8
+{
+	TANGO_HAL_PIXEL_FORMAT_RGBA_8888,
+	TANGO_HAL_PIXEL_FORMAT_YV12,
+	TANGO_HAL_PIXEL_FORMAT_YCrCb_420_SP,
+};
+
+USTRUCT(BlueprintType)
+struct TANGOPLUGIN_API FTangoImageBuffer
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Tango camera type"))
+		ETangoCameraType CameraType;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Image width"))
+		int32 Width;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Image height"))
+		int32 Height;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Image timestamp"))
+		FDateTime Timestamp;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Image frame number"))
+		int32 FrameNumber;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Image format"))
+		ETangoImageFormat ImageFormat;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Image data"))
+		TArray<uint8> Data;
+};
+
+

@@ -15,7 +15,8 @@ limitations under the License.*/
 #pragma once
 #include "TangoDataTypes.h"
 
-class TangoSpaceConversions{
+class TangoSpaceConversions
+{
 public:
 	struct TangoSpaceConversionPair
 	{

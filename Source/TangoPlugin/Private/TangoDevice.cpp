@@ -138,6 +138,7 @@ void UTangoDevice::DeallocateResources()
 
 UTangoDevice::~UTangoDevice()
 {
+	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::Destructor: Called"));
 	if (bHasBeenPropelyInitialized)
 	{
 		DeallocateResources();
@@ -314,7 +315,7 @@ float UTangoDevice::GetMetersToWorldScale()
 	return CurrentConfig.MetersToWorldScale;
 }
 
-FTangoCameraIntrinsics UTangoDevice::GetCameraIntrinsics(TEnumAsByte<ETangoCameraType::Type> CameraID)
+FTangoCameraIntrinsics UTangoDevice::GetCameraIntrinsics(ETangoCameraType CameraID)
 {
 #if PLATFORM_ANDROID
 
@@ -337,7 +338,22 @@ bool UTangoDevice::IsLearningModeEnabled()
 //END - Core Tango functions
 
 //BEGIN - Platform Only Functions
+
+
 #if PLATFORM_ANDROID
+
+template <typename T>
+TangoErrorType DoTangoConfigSet(
+	TangoErrorType(*Set)(TangoConfig, const char*, T),
+	TangoConfig config, const char* key, T value)
+{
+	TangoErrorType Result = Set(config, key, value);
+	if (Result != TANGO_SUCCESS)
+	{
+		UE_LOG(TangoPlugin, Warning, TEXT("Failed to set tango config: %s"), *(FString(key)));
+	}
+	return Result;
+}
 
 bool UTangoDevice::ApplyConfig()
 {
@@ -358,23 +374,53 @@ bool UTangoDevice::ApplyConfig()
 	}
 
 	bool bSuccess = true;
-	bSuccess = TangoConfig_setBool(Config_, "config_enable_auto_recovery", CurrentConfig.bEnableAutoRecovery) == TANGO_SUCCESS	&& bSuccess;
-	bSuccess = TangoConfig_setBool(Config_, "config_enable_color_camera", CurrentConfig.bEnableColorCameraCapabilities) == TANGO_SUCCESS	&& bSuccess;
-	bSuccess = TangoConfig_setBool(Config_, "config_color_mode_auto", CurrentConfig.bColorModeAuto) == TANGO_SUCCESS	&& bSuccess;
-	bSuccess = TangoConfig_setBool(Config_, "config_enable_depth", CurrentConfig.bEnableDepthCapabilities) == TANGO_SUCCESS	&& bSuccess;
-	bSuccess = TangoConfig_setBool(Config_, "config_high_rate_pose", CurrentConfig.bHighRatePose) == TANGO_SUCCESS	&& bSuccess;
-	bSuccess = TangoConfig_setBool(Config_, "config_enable_learning_mode", CurrentConfig.bEnableLearningMode) == TANGO_SUCCESS	&& bSuccess;
-	bSuccess = TangoConfig_setBool(Config_, "config_enable_low_latency_imu_integration", CurrentConfig.bLowLatencyIMUIntegration) == TANGO_SUCCESS	&& bSuccess;
-	bSuccess = TangoConfig_setBool(Config_, "config_enable_motion_tracking", CurrentConfig.bEnableMotionTracking) == TANGO_SUCCESS	&& bSuccess;
-	bSuccess = TangoConfig_setBool(Config_, "config_smooth_pose", CurrentConfig.bSmoothPose) == TANGO_SUCCESS	&& bSuccess;
-	bSuccess = TangoConfig_setInt32(Config_, "config_color_exp", CurrentConfig.ColorExposure) == TANGO_SUCCESS	&& bSuccess;
-	bSuccess = TangoConfig_setInt32(Config_, "config_color_iso", CurrentConfig.ColorISO) == TANGO_SUCCESS	&& bSuccess;
-	bSuccess = TangoConfig_setString(Config_, "config_load_area_description_UUID", TCHAR_TO_ANSI(*CurrentConfig.AreaDescription.UUID)) == TANGO_SUCCESS	&& bSuccess;
+	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_auto_recovery", CurrentConfig.bEnableAutoRecovery) == TANGO_SUCCESS	&& bSuccess;
+	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_color_camera", CurrentConfig.bEnableColorCameraCapabilities) == TANGO_SUCCESS	&& bSuccess;
+	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_color_mode_auto", CurrentConfig.bColorModeAuto) == TANGO_SUCCESS	&& bSuccess;
+	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_depth", CurrentConfig.bEnableDepthCapabilities) == TANGO_SUCCESS	&& bSuccess;
+	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_high_rate_pose", CurrentConfig.bHighRatePose) == TANGO_SUCCESS	&& bSuccess;
+	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_learning_mode", CurrentConfig.bEnableLearningMode) == TANGO_SUCCESS	&& bSuccess;
+	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_low_latency_imu_integration", CurrentConfig.bLowLatencyIMUIntegration) == TANGO_SUCCESS	&& bSuccess;
+	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_motion_tracking", CurrentConfig.bEnableMotionTracking) == TANGO_SUCCESS	&& bSuccess;
+	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_smooth_pose", CurrentConfig.bSmoothPose) == TANGO_SUCCESS	&& bSuccess;
+	bSuccess = DoTangoConfigSet(&TangoConfig_setInt32, Config_, "config_color_exp", CurrentConfig.ColorExposure) == TANGO_SUCCESS	&& bSuccess;
+	bSuccess = DoTangoConfigSet(&TangoConfig_setInt32, Config_, "config_color_iso", CurrentConfig.ColorISO) == TANGO_SUCCESS	&& bSuccess;
+	if (CurrentConfig.bUseCloudAdf)
+	{
+		bool bEnabledCloudAdf = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_experimental_use_cloud_adf", CurrentConfig.bUseCloudAdf) == TANGO_SUCCESS;
+		if (bEnabledCloudAdf)
+		{
+			UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice: successfully enabled Cloud ADF"));
+		}
+		else
+		{
+			UE_LOG(TangoPlugin, Error, TEXT("UTangoDevice: failed to enable Cloud ADF"));
+		}
+		bSuccess = bEnabledCloudAdf && bSuccess;
+	}
+	if (!CurrentConfig.bUseCloudAdf && CurrentConfig.AreaDescription.UUID.Len() > 0)
+	{
+		bool bLoadedAreaDesc = TangoConfig_setString(Config_, "config_load_area_description_UUID", TCHAR_TO_ANSI(*CurrentConfig.AreaDescription.UUID)) == TANGO_SUCCESS;
+		if (!bLoadedAreaDesc)
+		{
+			UE_LOG(TangoPlugin, Error, TEXT("UTangoDevice: Couldn't load area description %s"), *CurrentConfig.AreaDescription.UUID);
+			bSuccess = false;
+		}
+		else
+		{
+			UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice: Loaded area description %s: %s"), *CurrentConfig.AreaDescription.Filename, *CurrentConfig.AreaDescription.UUID);
+		}
+	}
 	
 	if (!bSuccess)
 	{
 		UE_LOG(TangoPlugin, Warning, TEXT(" UTangoDevice::ApplyConfig: ApplyConfig FAILED because the Config parameters could not be set."));
 	}
+	else
+	{
+		
+	}
+
 
 	bSuccess = SetTangoRuntimeConfig(CurrentRuntimeConfig,true) && bSuccess;
 
@@ -382,7 +428,7 @@ bool UTangoDevice::ApplyConfig()
 }
 
 /*
- * This funciton sends a request to the Java layer to start the Tango service
+ * This function sends a request to the Java layer to start the Tango service
  */
 void UTangoDevice::ConnectTangoService()
 {
@@ -411,7 +457,7 @@ void UTangoDevice::ConnectTangoService()
 }
 
 /*
- * This funciton sends a request to the Java layer to start the Tango service
+ * This function sends a request to the Java layer to start the Tango service
  */
 void UTangoDevice::UnbindTangoService()
 {
@@ -637,6 +683,10 @@ void UTangoDevice::AddTangoMotionComponent(UTangoMotionComponent* Component, TAr
 			{
 				break;
 			}
+		}
+		if (i >= MotionComponents.Num())
+		{
+			break;
 		}
 		if (MotionComponents[i] == Component)
 		{

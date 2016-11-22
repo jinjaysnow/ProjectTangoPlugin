@@ -1,6 +1,6 @@
 /*Copyright 2016 Google
 Author: Opaque Media Group
- 
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -16,6 +16,7 @@ limitations under the License.*/
 
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "TangoDataTypes.h"
+#include "TangoAreaLearningComponent.h"
 #include "TangoFunctionLibrary.generated.h"
 
 /**
@@ -94,6 +95,36 @@ public:
 	* @return An array of all the UUID/Filename pairs stored within this device's Tango Core repository.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Tango|Core", meta = (Keywords = "tango, camera, camera type, device"))
-		static FTangoCameraIntrinsics GetCameraIntrinsics(TEnumAsByte<ETangoCameraType::Type> CameraID);
+		static FTangoCameraIntrinsics GetCameraIntrinsics(ETangoCameraType CameraID);
+
+	/*
+	* Utility to get a rotation as a quaternion
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Tango|Util", BlueprintPure)
+		static FQuat GetRotationAsQuaternion(const FRotator& Rotator)
+	{
+		return Rotator.Quaternion();
+	}
+
+	/*
+	* Utility to get a rotation as a Rotator
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Tango|Util", BlueprintPure)
+		static FRotator GetRotationAsRotator(const FQuat& Quat)
+	{
+		return FRotator(Quat);
+	}
+
+	/*
+	* Utility to convert from UE Coordinates to a Tango Coordinate frame
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Tango|Util", BlueprintPure)
+		static void ConvertTransformToTango(const FTransform& Transform, ETangoCoordinateFrameType TargetFrame, FTransform& Result);
+
+	/*
+	* Utility to convert to UE Coordinates from a Tango Coordinate frame
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Tango|Util", BlueprintPure)
+		static void ConvertTransformFromTango(const FTransform& Transform, ETangoCoordinateFrameType BaseFrame, FTransform& Result);
 
 };

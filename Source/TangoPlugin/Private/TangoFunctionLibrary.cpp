@@ -16,6 +16,7 @@ limitations under the License.*/
 #include "TangoDevice.h"
 #include "TangoFunctionLibrary.h"
 #include "TangoDataTypes.h"
+#include "TangoCoordinateConversions.h"
 
 void UTangoFunctionLibrary::ConnectTangoService(FTangoConfig Configuration, FTangoRuntimeConfig RuntimeConfiguration)
 {
@@ -37,7 +38,7 @@ bool UTangoFunctionLibrary::IsTangoServiceRunning()
 	return UTangoDevice::Get().IsTangoServiceRunning();
 }
 
-FTangoCameraIntrinsics UTangoFunctionLibrary::GetCameraIntrinsics(TEnumAsByte<ETangoCameraType::Type> CameraID)
+FTangoCameraIntrinsics UTangoFunctionLibrary::GetCameraIntrinsics(ETangoCameraType CameraID)
 {
 	return UTangoDevice::Get().GetCameraIntrinsics(CameraID);
 }
@@ -53,16 +54,20 @@ FTangoAreaDescription UTangoFunctionLibrary::GetLoadedAreaDescription()
 
 	TArray<FTangoAreaDescription> AreaDescriptions = GetAllAreaDescriptionData();
 	FString LoadedUUID = UTangoDevice::Get().GetLoadedAreaDescriptionUUID();
-
+	bool Found = false;
 	for (int i = 0; i < AreaDescriptions.Num(); i++)
 	{
 		if (AreaDescriptions[i].UUID == LoadedUUID)
 		{
 			CurrentAreaDescription = AreaDescriptions[i];
+			Found = true;
 			break;
 		}
 	}
-
+	if (!Found)
+	{
+		UE_LOG(TangoPlugin, Error, TEXT("Loaded area description not found: %s"), *LoadedUUID);
+	}
 	return CurrentAreaDescription;
 }
 
@@ -76,3 +81,30 @@ bool UTangoFunctionLibrary::SetTangoRuntimeConfig(FTangoRuntimeConfig Configurat
 {
 	return UTangoDevice::Get().SetTangoRuntimeConfig(Configuration);
 }
+
+void UTangoFunctionLibrary::ConvertTransformFromTango(const FTransform& Transform, ETangoCoordinateFrameType BaseFrame, FTransform& Result)
+{
+  TangoSpaceConversions::TangoSpaceConversionPair Converter;
+  FTangoCoordinateFramePair RefPair;
+  RefPair.BaseFrame = BaseFrame;
+  RefPair.TargetFrame = BaseFrame;
+  TangoSpaceConversions::GetSpaceConversionPair(Converter, RefPair);
+  FMatrix Target = Transform.ToMatrixWithScale();
+  Result.SetFromMatrix(Converter.TargetFrameToUE * Target);
+  Result.SetTranslation(Result.GetTranslation() * 100);
+}
+
+void UTangoFunctionLibrary::ConvertTransformToTango(const FTransform& Transform, ETangoCoordinateFrameType TargetFrame, FTransform& Result)
+{
+  TangoSpaceConversions::TangoSpaceConversionPair Converter;
+  FTangoCoordinateFramePair RefPair;
+  RefPair.BaseFrame = TargetFrame;
+  RefPair.TargetFrame = TargetFrame;
+  TangoSpaceConversions::GetSpaceConversionPair(Converter, RefPair);
+  FTransform Scaled = Transform;
+  Scaled.SetTranslation(Transform.GetTranslation() * .01f);
+  FMatrix Source = Scaled.ToMatrixWithScale();
+  Result.SetFromMatrix(Converter.UEtoBaseFrame * Source);
+}
+
+

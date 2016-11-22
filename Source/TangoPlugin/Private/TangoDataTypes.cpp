@@ -22,8 +22,8 @@ limitations under the License.*/
 //Tango Data Types function definition begins here
 
 //Assume a valid pairing- the frame pair should not default to the first elements of the enumeration
-FTangoCoordinateFramePair::FTangoCoordinateFramePair(const TEnumAsByte<ETangoCoordinateFrameType::Type> NewBaseFrame, 
-													 const TEnumAsByte<ETangoCoordinateFrameType::Type> NewTargetFrame)
+FTangoCoordinateFramePair::FTangoCoordinateFramePair(const ETangoCoordinateFrameType NewBaseFrame, 
+													 const ETangoCoordinateFrameType NewTargetFrame)
 {
 	BaseFrame = NewBaseFrame;
 	TargetFrame = NewTargetFrame;
@@ -46,7 +46,7 @@ void FTangoAreaDescription::SetFilename(const FString NewValue)
 }
 
 FTangoPoseData::FTangoPoseData(FVector NewPosition, FRotator NewRotation, FQuat NewQuatRotation, FTangoCoordinateFramePair NewFrameOfReference,
-	TEnumAsByte<ETangoPoseStatus::Type> NewStatusCode, float NewTimestamp) {
+	ETangoPoseStatus NewStatusCode, float NewTimestamp) {
 	Position = NewPosition;
 	Rotation = NewRotation;
 	QuatRotation = NewQuatRotation;
@@ -55,15 +55,13 @@ FTangoPoseData::FTangoPoseData(FVector NewPosition, FRotator NewRotation, FQuat 
 	Timestamp = NewTimestamp;
 }
 
-FTangoAreaDescriptionMetaData::FTangoAreaDescriptionMetaData(const FString InFileName, const int32 InMillisecondsSinceUnixEpoch, const FTransform InTransformation)
+FTangoAreaDescriptionMetaData::FTangoAreaDescriptionMetaData(const FString InFileName, const int64 InMillisecondsSinceUnixEpoch, double const InPosition[], double const InOrientation[])
 {
 	Filename = InFileName;
 	MillisecondsSinceUnixEpoch = InMillisecondsSinceUnixEpoch;
-	TransformationX		= 0;
-	TransformationY		= 0;
-	TransformationZ		= 0;
-	TransformationQX	= 0;
-	TransformationQY	= 0;
-	TransformationQZ	= 0;
-	TransformationQW	= 1;
+    for (int32 i = 0; i < 3; i++)
+    {
+        Position[i] = InPosition[i];
+        Orientation[i] = InOrientation[i];
+    }
 }

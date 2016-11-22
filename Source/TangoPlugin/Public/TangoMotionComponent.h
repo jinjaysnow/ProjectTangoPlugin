@@ -27,6 +27,7 @@ UCLASS(ClassGroup = Tango, Blueprintable, meta = (BlueprintSpawnableComponent))
 class TANGOPLUGIN_API UTangoMotionComponent : public USceneComponent, public ITangoARInterface
 {
 	GENERATED_BODY()
+
 	UTangoMotionComponent();
 	~UTangoMotionComponent(); //In TangoViewExtension.cpp!
 	virtual void BeginDestroy() override;
@@ -76,7 +77,7 @@ public:
 	* @return The enum value which describes the current status of this pose- either Valid, Invalid, Initializing or Unknown.
 	*/
 	UFUNCTION(Category = "Tango|Motion", BlueprintPure, meta = (ToolTip = "Returns the status of the pose information returned by the Tango Device", keyword = "motion, rotation, rotator, offset"))
-		TEnumAsByte<ETangoPoseStatus::Type> GetTangoPoseStatus(float& Timestamp);
+		ETangoPoseStatus GetTangoPoseStatus(float& Timestamp);
 
 	/*
 	*	Resets the motion tracking of the tango device. This function is equivalent to the TangoService_ResetMotionTracking function.

@@ -24,7 +24,7 @@ limitations under the License.*/
 namespace 
 {
 
-	static TMap<ETangoCoordinateFrameType::Type, TMap<ETangoCoordinateFrameType::Type, TangoSpaceConversions::TangoSpaceConversionPair>> TangoSpaceConversionPairMapper;
+	static TMap<ETangoCoordinateFrameType, TMap<ETangoCoordinateFrameType, TangoSpaceConversions::TangoSpaceConversionPair>> TangoSpaceConversionPairMapper;
 
 	static bool bMatricesArePrepared = false;
 
@@ -42,7 +42,8 @@ namespace
 		}
 		return (ResultOfServiceCall == TANGO_SUCCESS && D.StatusCode == ETangoPoseStatus::VALID);
 #else
-		return false;
+		Matrix.SetIdentity();
+		return true;
 #endif
 	}
 
@@ -93,8 +94,8 @@ namespace
 		DISPLAYtoUE.M[1][0] = 1;
 		DISPLAYtoUE.M[2][1] = 1;
 
-		TMap<ETangoCoordinateFrameType::Type, FMatrix> ToUESpace;
-		TMap<ETangoCoordinateFrameType::Type, FMatrix> DeviceToOffset;
+		TMap<ETangoCoordinateFrameType, FMatrix> ToUESpace;
+		TMap<ETangoCoordinateFrameType, FMatrix> DeviceToOffset;
 
 		ToUESpace.Emplace(ETangoCoordinateFrameType::AREA_DESCRIPTION,		ADFtoUE);
 		ToUESpace.Emplace(ETangoCoordinateFrameType::START_OF_SERVICE,		ADFtoUE);
@@ -119,8 +120,8 @@ namespace
 			for (int32 j = 1; j < 10; ++j)//Iterate over ETangoCoordinateFrameType and igore GLOBAL_WGS84
 			{
 				TangoSpaceConversions::TangoSpaceConversionPair P;
-				P.Pair.BaseFrame = (ETangoCoordinateFrameType::Type)i;
-				P.Pair.TargetFrame = (ETangoCoordinateFrameType::Type)j;
+				P.Pair.BaseFrame = (ETangoCoordinateFrameType)i;
+				P.Pair.TargetFrame = (ETangoCoordinateFrameType)j;
 
 				if (P.Pair.BaseFrame == ETangoCoordinateFrameType::DISPLAY || P.Pair.TargetFrame == ETangoCoordinateFrameType::DISPLAY)
 				{

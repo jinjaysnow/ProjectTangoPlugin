@@ -23,7 +23,7 @@ limitations under the License.*/
 
 static FTangoCoordinateFramePair FromCObject(TangoCoordinateFramePair ToConvert)
 {
-	return FTangoCoordinateFramePair((ETangoCoordinateFrameType::Type) ToConvert.base, (ETangoCoordinateFrameType::Type) ToConvert.target);
+	return FTangoCoordinateFramePair((ETangoCoordinateFrameType) ToConvert.base, (ETangoCoordinateFrameType) ToConvert.target);
 }
 
 static TangoCoordinateFramePair ToCObject(FTangoCoordinateFramePair ToConvert)
@@ -42,7 +42,7 @@ static FTangoPoseData FromCPointer(const TangoPoseData* ToConvert)
 	Result.QuatRotation = FQuat(ToConvert->orientation[0], ToConvert->orientation[1], ToConvert->orientation[2], ToConvert->orientation[3]);
 	Result.FrameOfReference = FromCObject(ToConvert->frame);
 	Result.Timestamp = ToConvert->timestamp;
-	Result.StatusCode = (ETangoPoseStatus::Type)ToConvert->status_code;
+	Result.StatusCode = (ETangoPoseStatus)ToConvert->status_code;
 	return Result;
 }
 
@@ -51,7 +51,7 @@ static FTangoCameraIntrinsics FromCObject(TangoCameraIntrinsics ToConvert)
 
 	FTangoCameraIntrinsics Result;
 
-	Result.CameraID = static_cast<TEnumAsByte<ETangoCameraType::Type>>((int)ToConvert.camera_id);
+	Result.CameraID = static_cast<ETangoCameraType>((int)ToConvert.camera_id);
 
 	Result.Width = static_cast<int32>(ToConvert.width);
 	Result.Height = static_cast<int32> (ToConvert.height);
@@ -84,7 +84,7 @@ static FTangoEvent FromCObject(const TangoEvent* Event)
 {
 	FTangoEvent UEvent;
 
-	UEvent.Type = static_cast<ETangoEventType::Type>(Event->type);
+	UEvent.Type = static_cast<ETangoEventType>(Event->type);
 
 	if (FString(Event->event_key).Equals(TEXT("TangoServiceException"), ESearchCase::IgnoreCase))
 	{

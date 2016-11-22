@@ -114,10 +114,10 @@ void UTangoDevice::BroadCastEvents()
 				break;
             //Events for import and export results (success, cancelled, declined)
             case ETangoEventKeyType::IMPORT_RESULT:
-                    TangoEventComponents[i]->OnFileImportEvent.Broadcast((ETangoRequestResult::Type) FCString::Atoi(*(CurrentEventsCopy[e].Message)));
+                    TangoEventComponents[i]->OnFileImportEvent.Broadcast((ETangoRequestResult) FCString::Atoi(*(CurrentEventsCopy[e].Message)));
                 break;
             case ETangoEventKeyType::EXPORT_RESULT:
-                    TangoEventComponents[i]->OnFileExportEvent.Broadcast((ETangoRequestResult::Type) FCString::Atoi(*(CurrentEventsCopy[e].Message)));
+                    TangoEventComponents[i]->OnFileExportEvent.Broadcast((ETangoRequestResult) FCString::Atoi(*(CurrentEventsCopy[e].Message)));
                 break;
 			default:
 				break;
