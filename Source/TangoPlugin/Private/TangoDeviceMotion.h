@@ -43,6 +43,7 @@ public:
 
 	//Tango Motion functions
 	FTangoPoseData GetPoseAtTime(FTangoCoordinateFramePair FrameOfReference, float Timestamp);
+	FWGS_84_PoseData GetWGS_84_PoseAtTime(const ETangoCoordinateFrameType TargetFrame, float Timestamp);
 	
 	void ResetMotionTracking();
 

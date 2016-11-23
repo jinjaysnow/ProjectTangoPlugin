@@ -19,6 +19,7 @@ limitations under the License.*/
 #include "TangoCoordinateConversions.h"
 
 #include "TangoDevice.h"
+#include <math.h>
 
 
 #if PLATFORM_ANDROID
@@ -98,6 +99,46 @@ void UTangoDeviceMotion::OnPoseAvailable(const TangoPoseData* Pose)
 	}
 }
 #endif
+
+FWGS_84_PoseData UTangoDeviceMotion::GetWGS_84_PoseAtTime(const ETangoCoordinateFrameType TargetFrame, float Timestamp)
+{
+	FWGS_84_PoseData Result;
+	//Prevent Tango calls before the system is ready, return null data instead
+	if (!(UTangoDevice::Get().IsTangoServiceRunning()) || !IsLocalized())
+	{
+		return Result;
+	}
+#if PLATFORM_ANDROID
+	FTangoCoordinateFramePair FrameOfReference;
+	FrameOfReference.TargetFrame = TargetFrame;
+	FrameOfReference.BaseFrame = ETangoCoordinateFrameType::GLOBAL_WGS84;
+	TangoPoseData ToConvert;
+	
+	////Remember to observe the Tango status in case the system isn't ready yet
+	TangoErrorType ResultOfServiceCall;
+	if (TangoService_getPoseAtTime(static_cast<double> (Timestamp), ToCObject(FrameOfReference), &ToConvert) != TANGO_SUCCESS)
+	{
+		UE_LOG(TangoPlugin, Warning, TEXT("UTangoDeviceMotion::GetPoseAtTime: TangoService_getPoseAtTime not successful"));
+		//return a generic object
+		return Result;
+	}
+	double Lat;
+	double Lon;
+	double Alt;
+	UE_LOG(TangoPlugin, Log, TEXT("Ecef Location: %.17f, %.17f, %.17f"), ToConvert.translation[0], ToConvert.translation[1], ToConvert.translation[2]);
+	Result.Position[0] = ToConvert.translation[0];
+	Result.Position[1] = ToConvert.translation[1];
+	Result.Position[2] = ToConvert.translation[2];
+	Result.Orientation[0] = ToConvert.orientation[0];
+	Result.Orientation[1] = ToConvert.orientation[1];
+	Result.Orientation[2] = ToConvert.orientation[2];
+	Result.Orientation[3] = ToConvert.orientation[3];
+	Result.FrameOfReference = FromCObject(ToConvert.frame);
+	Result.Timestamp = ToConvert.timestamp;
+	Result.StatusCode = (ETangoPoseStatus)ToConvert.status_code;
+#endif
+	return Result;
+}
 
 //START - Tango Motion functions
 

@@ -329,6 +329,23 @@ struct TANGOPLUGIN_API FTangoConfig
 		float MetersToWorldScale = 100.0f;
 
 };
+USTRUCT(BlueprintType)
+struct TANGOPLUGIN_API FWGS_84_PoseData
+{
+	GENERATED_USTRUCT_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Frame of reference of this pose"))
+		FTangoCoordinateFramePair FrameOfReference;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Status code of this pose"))
+		ETangoPoseStatus StatusCode = ETangoPoseStatus::UNKNOWN;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Pose time in seconds since the device was started"))
+		float Timestamp;
+	
+	/** Maintains required precision */
+	double Position[3];
+	double Orientation[4];
+};
 
 /*
 	FTangoPose
@@ -423,6 +440,7 @@ struct TANGOPLUGIN_API FTangoAreaDescriptionMetaData
 
 	uint64 MillisecondsSinceUnixEpoch;
 
+	/** Maintains required precision */
 	double Position[3];
 	double Orientation[4];
 

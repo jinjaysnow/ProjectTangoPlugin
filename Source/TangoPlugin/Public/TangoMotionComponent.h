@@ -60,6 +60,12 @@ public:
 	*/
 	UFUNCTION(Category = "Tango|Motion", meta = (ToolTip = "Returns the Tango pose object for the given time.", keyword = "motion, time, timestamp, pose"), BlueprintPure)
 		FTangoPoseData GetTangoPoseAtTime(FTangoCoordinateFramePair FrameOfReference, float Timestamp);
+
+	/*
+	*  Like GetTangoPoseAtTime with BaseFrame = WGS_84 but returns a struct which contains the pose in (the required) double precision coordinates.
+	*/
+	UFUNCTION(Category = "Tango|Motion", meta = (ToolTip = "Returns the Tango pose object for the given time.", keyword = "motion, time, timestamp, pose"), BlueprintPure)
+		FWGS_84_PoseData GetWGS_84_PoseAtTime(ETangoCoordinateFrameType TargetFrame, float Timestamp);
 	/*
 	*	Returns a Transfrom struct for the position of the motion component at the given time.
 	* @param Target The Tango Area Motion Component object.

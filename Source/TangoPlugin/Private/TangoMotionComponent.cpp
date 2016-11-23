@@ -42,6 +42,11 @@ void UTangoMotionComponent::SetupPoseEvents(TArray<FTangoCoordinateFramePair> Fr
 	UTangoDevice::Get().AddTangoMotionComponent(this, FramePairs);
 }
 
+FWGS_84_PoseData UTangoMotionComponent::GetWGS_84_PoseAtTime(ETangoCoordinateFrameType TargetFrame, float Timestamp)
+{
+	return UTangoDevice::Get().GetTangoDeviceMotionPointer() != nullptr ? UTangoDevice::Get().GetTangoDeviceMotionPointer()->GetWGS_84_PoseAtTime(TargetFrame, Timestamp) : FWGS_84_PoseData();
+}
+
 FTangoPoseData UTangoMotionComponent::GetTangoPoseAtTime(FTangoCoordinateFramePair FrameOfReference, float Timestamp)
 {
 	return UTangoDevice::Get().GetTangoDeviceMotionPointer() != nullptr ? UTangoDevice::Get().GetTangoDeviceMotionPointer()->GetPoseAtTime(FrameOfReference, Timestamp) : FTangoPoseData();
