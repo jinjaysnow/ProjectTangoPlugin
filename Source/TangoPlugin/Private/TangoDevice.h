@@ -139,6 +139,7 @@ public:
 	/////////////////
 	// Tango Event //
 	/////////////////
+	static void RunOnMainThread(const TFunction<void()> Runnable);
 public:
 	void AttachTangoEventComponent(UTangoEventComponent* Component);
 #if PLATFORM_ANDROID

@@ -14,6 +14,7 @@ limitations under the License.*/
 #include "TangoPluginPrivatePCH.h"
 #include "TangoDevice.h"
 #include "TangoFromToCObject.h"
+#include "Tickable.h"
 
 #include <UnrealTemplate.h>
 
@@ -22,6 +23,39 @@ limitations under the License.*/
 #include "Android/AndroidJNI.h"
 #include "AndroidApplication.h"
 #endif
+
+class RunOnMainThread : public FTickableObjectBase
+{
+public:
+	virtual void Tick(float DeltaSeconds) override
+	{
+		Run();
+		delete this;
+	}
+	virtual bool IsTickable() const override
+	{
+		return true;
+	}
+
+	/** return the stat id to use for this tickable **/
+	virtual TStatId GetStatId() const override
+	{
+		return StatId;
+	}
+	virtual ~RunOnMainThread() {}
+	RunOnMainThread(const TFunction<void()> InRun) : Run(InRun) {}
+private:
+	TFunction<void()> Run;
+	static TStatId StatId;
+
+};
+
+TStatId RunOnMainThread::StatId;
+
+void UTangoDevice::RunOnMainThread(const TFunction<void()> Runnable)
+{
+	new ::RunOnMainThread(Runnable);
+}
 
 UTangoDevice* UTangoDevice::Instance;
 
@@ -116,8 +150,8 @@ void UTangoDevice::DeallocateResources()
 	{
 		TangoConfig_free(Config_);
 		Config_ = nullptr;
-        DePopulateAppContext();
 	}
+	DePopulateAppContext();
 #endif
 	if (GetTangoDevicePointCloudPointer() != nullptr)
 	{
@@ -319,11 +353,14 @@ FTangoCameraIntrinsics UTangoDevice::GetCameraIntrinsics(ETangoCameraType Camera
 {
 #if PLATFORM_ANDROID
 
-	TangoCameraIntrinsics DeviceIntrinsics;
-	TangoErrorType RequestResult = TangoService_getCameraIntrinsics((TangoCameraId)(int)CameraID, &DeviceIntrinsics);
-	if (RequestResult == TANGO_SUCCESS)
+	if (IsTangoServiceRunning())
 	{
-		return FromCObject(DeviceIntrinsics);
+		TangoCameraIntrinsics DeviceIntrinsics;
+		TangoErrorType RequestResult = TangoService_getCameraIntrinsics((TangoCameraId)(int)CameraID, &DeviceIntrinsics);
+		if (RequestResult == TANGO_SUCCESS)
+		{
+			return FromCObject(DeviceIntrinsics);
+		}
 	}
 #endif
 
@@ -494,11 +531,13 @@ extern "C"
     Java_com_projecttango_plugin_TangoInterface_OnJavaTangoServiceConnected(JNIEnv* Env, jobject, jobject IBinder)
     {
         UE_LOG(LogTemp, Warning, TEXT("UTangoDevice::OnJavaServiceConnected: Success- C++ function called from Java!"));
-        //Java service connection finished, complete C API connection
-        UTangoDevice::Get().BindAndCompleteConnectionToService(Env, IBinder);
+        //Java service connection finished, complete C API connection	
+		UTangoDevice::Get().BindAndCompleteConnectionToService(Env, IBinder);
     }
 }
 #endif
+
+
 
 #if PLATFORM_ANDROID
 /*
@@ -506,7 +545,7 @@ extern "C"
  */
 void UTangoDevice::BindAndCompleteConnectionToService(JNIEnv* Env, jobject IBinder)
 {
-    
+	FScopeLock ScopeLock(&EventLock);
     //Bind to the Tango service
     if (TangoService_setBinder(Env, IBinder) != TANGO_SUCCESS)
     {
@@ -601,7 +640,9 @@ void UTangoDevice::BindAndCompleteConnectionToService(JNIEnv* Env, jobject IBind
 	}
 	ConnectEventCallback();//Activate Events
 	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::BindAndCompleteConnectionToService: FINISHED"));
-	BroadCastConnect();
+	RunOnMainThread([this]()-> void {
+		BroadCastConnect();
+	});
 	//Call a second time to make depth disabling at startup work.
 	if (!CurrentRuntimeConfig.bEnableDepth && CurrentConfig.bEnableDepthCapabilities)
 	{
@@ -613,15 +654,11 @@ void UTangoDevice::BindAndCompleteConnectionToService(JNIEnv* Env, jobject IBind
 void UTangoDevice::DisconnectTangoService(bool bByAppServicePause)
 {
 	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::DisconnectTangoService: Called"));
-	
+
     if (GetTangoServiceStatus() == CONNECTED)
 	{
 		UE_LOG(TangoPlugin, Log, TEXT(" UTangoDevice::DisconnectTangoService: will now disconnect!"));
-
-        //Free the Tango Config object
-        TangoConfig_free(Config_);
-        Config_ = NULL;
-        
+   
         //Disconnect from the C service
 		TangoService_disconnect();
         
@@ -634,6 +671,7 @@ void UTangoDevice::DisconnectTangoService(bool bByAppServicePause)
 	}
 	else
 	{
+		DeallocateResources();
 		UE_LOG(TangoPlugin, Warning, TEXT(" UTangoDevice::DisconnectTangoService: Tango is not registered as connected, and is therefore not disconnecting properly!!"));
 	}
 	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::DisconnectTangoService: FINISHED"));
@@ -643,25 +681,31 @@ void UTangoDevice::DisconnectTangoService(bool bByAppServicePause)
 
 void UTangoDevice::AppServiceResume()
 {
-	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServiceResume: Called"));
-	if (GetTangoServiceStatus() == DISCONNECTED_BY_APPSERVICEPAUSE)//We only reconnect when we disconnected the Tango by AppServicePause first!
+	RunOnMainThread([this]() -> void
 	{
-		UE_LOG(TangoPlugin, Log, TEXT(" UTangoDevice::AppServiceResume: Connect service called"));
-		ApplyConfig();
-		ConnectTangoService();
-	}
-	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServiceResume: FINISHED"));
+		UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServiceResume: Called"));
+		if (GetTangoServiceStatus() == DISCONNECTED_BY_APPSERVICEPAUSE)//We only reconnect when we disconnected the Tango by AppServicePause first!
+		{
+			UE_LOG(TangoPlugin, Log, TEXT(" UTangoDevice::AppServiceResume: Connect service called"));
+			//ApplyConfig();
+			ConnectTangoService();
+		}
+		UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServiceResume: FINISHED"));
+	});
 }
 
 void UTangoDevice::AppServicePause()
 {
-	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServicePause: Called"));
-	if (IsTangoServiceRunning()) //We only disconnect when it is already running!
+	RunOnMainThread([this]() -> void
 	{
-		DeallocateResources();
-		DisconnectTangoService(true);
-	}
-	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServicePause: FINISHED"));
+		UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServicePause: Called"));
+		if (IsTangoServiceRunning()) //We only disconnect when it is already running!
+		{
+			DeallocateResources();
+			DisconnectTangoService(true);
+		}
+		UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServicePause: FINISHED"));
+	});
 }
 
 #endif
