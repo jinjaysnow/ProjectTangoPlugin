@@ -18,7 +18,7 @@ limitations under the License.*/
 #include "TangoViewExtension.h"
 #include "TangoARHelpers.h"
 
-UTangoARCamera::UTangoARCamera() : Super()
+UTangoARCamera::UTangoARCamera(const FObjectInitializer& Init) : Super(Init)
 {
 	bWantsBeginPlay = true;
 	PrimaryComponentTick.bCanEverTick = true;
@@ -58,9 +58,7 @@ void UTangoARCamera::BeginPlay()
 void UTangoARCamera::InitializeComponent()
 {
 	Super::InitializeComponent();
-	ARScreen = nullptr;
-	auto Intrin = TangoARHelpers::GetARCameraIntrinsics();
-	FieldOfView = FMath::RadiansToDegrees<float>(2.0f * FMath::Atan(0.5f * Intrin.Width / Intrin.Fx));
+
 }
 
 
@@ -77,6 +75,8 @@ void UTangoARCamera::TickComponent(float DeltaTime, enum ELevelTick TickType, FA
 
 	if (ARScreen == nullptr && TangoARHelpers::DataIsReady())
 	{
+		auto Intrin = TangoARHelpers::GetARCameraIntrinsics();
+		FieldOfView = FMath::RadiansToDegrees<float>(2.0f * FMath::Atan(0.5f * Intrin.Width / Intrin.Fx));
 		ARScreen = NewObject<UTangoARScreenComponent>(this, TEXT("TangoCameraARScreen"));
 		if (ARScreen)
 		{

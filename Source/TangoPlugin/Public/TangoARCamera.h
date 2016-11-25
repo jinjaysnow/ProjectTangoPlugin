@@ -24,9 +24,9 @@ class FTangoViewExtension;
 UCLASS(ClassGroup = Tango, meta = (BlueprintSpawnableComponent))
 class TANGOPLUGIN_API UTangoARCamera : public UCameraComponent, public ITangoARInterface
 {
-	GENERATED_BODY()
+	GENERATED_UCLASS_BODY()
 public:
-	UTangoARCamera();
+	//UTangoARCamera();
 	~UTangoARCamera();//In TangoViewExtension.cpp!
 	//ITangoARInterface
 public:
