@@ -22,7 +22,6 @@ UTangoMotionComponent::UTangoMotionComponent() : Super()
 {
 	LatestPoseTimeStamp = 0.0;
 	bWantsInitializeComponent = true;
-	bWantsBeginPlay = false;
 	PrimaryComponentTick.bCanEverTick = true;
 }
 

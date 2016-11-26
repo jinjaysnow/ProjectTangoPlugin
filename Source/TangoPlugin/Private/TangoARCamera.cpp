@@ -18,9 +18,8 @@ limitations under the License.*/
 #include "TangoViewExtension.h"
 #include "TangoARHelpers.h"
 
-UTangoARCamera::UTangoARCamera(const FObjectInitializer& Init) : Super(Init)
+UTangoARCamera::UTangoARCamera(const FObjectInitializer& Init) : ARScreen(nullptr), Super(Init)
 {
-	bWantsBeginPlay = true;
 	PrimaryComponentTick.bCanEverTick = true;
 	bWantsInitializeComponent = true;
 	FrameOfReference = FTangoCoordinateFramePair(ETangoCoordinateFrameType::START_OF_SERVICE, ETangoCoordinateFrameType::CAMERA_COLOR);
@@ -108,8 +107,9 @@ void UTangoARCamera::TickComponent(float DeltaTime, enum ELevelTick TickType, FA
 		//Only move the component if the pose status is valid.
 		if (LatestPose.StatusCode == ETangoPoseStatus::VALID)
 		{
-			SetRelativeLocation(LatestPose.Position);
-			SetRelativeRotation(FRotator(LatestPose.QuatRotation));
+			AActor* Owner = GetOwner();
+			Owner->SetActorLocation(LatestPose.Position);
+			Owner->SetActorRotation(FRotator(LatestPose.QuatRotation));
 		}
 	}
 	else

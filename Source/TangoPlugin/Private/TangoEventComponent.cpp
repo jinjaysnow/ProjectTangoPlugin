@@ -18,7 +18,6 @@ limitations under the License.*/
 
 UTangoEventComponent::UTangoEventComponent() : Super()
 {
-	bWantsBeginPlay = true;
 }
 
 void UTangoEventComponent::BeginPlay()

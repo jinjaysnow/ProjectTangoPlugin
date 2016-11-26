@@ -19,8 +19,6 @@ limitations under the License.*/
 #include "TangoCoordinateConversions.h"
 
 #include "TangoDevice.h"
-#include <math.h>
-
 
 #if PLATFORM_ANDROID
 #include "Android/AndroidJNI.h"
@@ -122,10 +120,7 @@ FWGS_84_PoseData UTangoDeviceMotion::GetWGS_84_PoseAtTime(const ETangoCoordinate
 		//return a generic object
 		return Result;
 	}
-	double Lat;
-	double Lon;
-	double Alt;
-	UE_LOG(TangoPlugin, Log, TEXT("Ecef Location: %.17f, %.17f, %.17f"), ToConvert.translation[0], ToConvert.translation[1], ToConvert.translation[2]);
+	//UE_LOG(TangoPlugin, Log, TEXT("Ecef Location: %.17f, %.17f, %.17f"), ToConvert.translation[0], ToConvert.translation[1], ToConvert.translation[2]);
 	Result.Position[0] = ToConvert.translation[0];
 	Result.Position[1] = ToConvert.translation[1];
 	Result.Position[2] = ToConvert.translation[2];

@@ -20,7 +20,6 @@ limitations under the License.*/
 UTangoImageComponent::UTangoImageComponent() : Super()
 {
 	bWantsInitializeComponent = false;
-	bWantsBeginPlay = false;
 	PrimaryComponentTick.bCanEverTick = true;
 }
 

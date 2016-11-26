@@ -18,7 +18,6 @@ limitations under the License.*/
 
 UTangoPointCloudComponent::UTangoPointCloudComponent() : Super()
 {
-	bWantsBeginPlay = true;
 }
 
 void UTangoPointCloudComponent::BeginPlay()

@@ -19,7 +19,6 @@ limitations under the License.*/
 
 UTangoARScreenComponent::UTangoARScreenComponent() : Super()
 {
-	bWantsBeginPlay = true;
 	PrimaryComponentTick.bCanEverTick = true;
 	auto MeshFinder = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("StaticMesh'/TangoPlugin/TangoPlane.TangoPlane'"));
 	auto MaterialFinder = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/TangoPlugin/TangoCameraPassthroughMaterial.TangoCameraPassthroughMaterial'"));
@@ -70,7 +69,7 @@ void UTangoARScreenComponent::BeginPlay()
 void UTangoARScreenComponent::SetupMaterial()
 {
 	UE_LOG(TangoPlugin, Log, TEXT("UTangoARScreenComponent::SetupMaterial: Called!"));
-	if (StaticMesh == nullptr)
+	if (GetStaticMesh() == nullptr)
 	{
 		SetStaticMesh(FoundMesh);
 		if (FoundMesh == nullptr)

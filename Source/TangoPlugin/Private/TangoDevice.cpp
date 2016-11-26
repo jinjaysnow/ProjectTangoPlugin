@@ -1,6 +1,6 @@
 /*Copyright 2016 Google
 Author: Opaque Media Group
- 
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -24,7 +24,7 @@ limitations under the License.*/
 #include "AndroidApplication.h"
 #endif
 
-class RunOnMainThread : public FTickableObjectBase
+class RunOnMainThread : public FTickableGameObject
 {
 public:
 	virtual void Tick(float DeltaSeconds) override
@@ -68,7 +68,7 @@ UTangoDevice::UTangoDevice() : UObject(), FTickableGameObject()
 	ImageHelper = nullptr;
 	AreaHelper = nullptr;
 #if PLATFORM_ANDROID
-    AppContextReference = nullptr;
+	AppContextReference = nullptr;
 #endif
 	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::UTangoDevice: Instantiating TangoDevice FINISHED"));
 }
@@ -102,43 +102,47 @@ void UTangoDevice::ProperInitialize()
  */
 void UTangoDevice::PopulateAppContext()
 {
-    jobject AppContext = NULL;
+	jobject AppContext = NULL;
 
-    if (JNIEnv* Env = FAndroidApplication::GetJavaEnv())
-    {
-        //We identify the method we need to call, by passing the name of the function.
-        static jmethodID Method = FJavaWrapper::FindMethod(Env, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_GetAppContext", "()Landroid/content/Context;", false);
-        //Once jmethodID has been identified, we supply it as an argument to CallObjectMethod.
-        //Use CallObjectMethod for functions which return a jobject, CallIntMethod for functions which return an int, etc.
-        AppContext = FJavaWrapper::CallObjectMethod(Env, FJavaWrapper::GameActivityThis, Method);
-        
-        if (AppContext == NULL)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("UTangoDevice::PopulateAppContext: Error - app context is still NULL after retrieval call!"));
-            AppContextReference = nullptr;
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("UTangoDevice::PopulateAppContext: Success - appcontext jobject is not null!!"));
-            //Now we cache the activity for later use to prevent garbage collection
-            AppContextReference = Env->NewGlobalRef(AppContext);
-        }
-    }
-    
-    return;
+	if (JNIEnv* Env = FAndroidApplication::GetJavaEnv())
+	{
+		//We identify the method we need to call, by passing the name of the function.
+		static jmethodID Method = FJavaWrapper::FindMethod(Env, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_GetAppContext", "()Landroid/content/Context;", false);
+		//Once jmethodID has been identified, we supply it as an argument to CallObjectMethod.
+		//Use CallObjectMethod for functions which return a jobject, CallIntMethod for functions which return an int, etc.
+		AppContext = FJavaWrapper::CallObjectMethod(Env, FJavaWrapper::GameActivityThis, Method);
+
+		if (AppContext == NULL)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("UTangoDevice::PopulateAppContext: Error - app context is still NULL after retrieval call!"));
+			AppContextReference = nullptr;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("UTangoDevice::PopulateAppContext: Success - appcontext jobject is not null!!"));
+			//Now we cache the activity for later use to prevent garbage collection
+			AppContextReference = Env->NewGlobalRef(AppContext);
+		}
+	}
+
+	return;
 }
 
 void UTangoDevice::DePopulateAppContext()
 {
-    if (JNIEnv* Env = FAndroidApplication::GetJavaEnv())
-    {
-        Env->DeleteGlobalRef(AppContextReference);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("UTangoDevice::PopulateAppContext: Success - appcontext jobject is not null!!"));
-    }
-    
+	if (JNIEnv* Env = FAndroidApplication::GetJavaEnv())
+	{
+		if (AppContextReference != nullptr)
+		{
+			Env->DeleteGlobalRef(AppContextReference);
+			AppContextReference = nullptr;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("UTangoDevice::PopulateAppContext: Success - appcontext jobject is not null!!"));
+		}
+	}
+
 }
 #endif
 
@@ -286,7 +290,7 @@ bool UTangoDevice::SetTangoRuntimeConfig(FTangoRuntimeConfig Configuration, bool
 		UE_LOG(TangoPlugin, Error, TEXT("UTangoDevice::SetTangoRuntimeConfig: Unable to set runtime Config Tango Config pointer is nullptr."));
 		return false;
 	}
-	if(!bPreRuntime && !IsTangoServiceRunning() )
+	if (!bPreRuntime && !IsTangoServiceRunning())
 	{
 		UE_LOG(TangoPlugin, Error, TEXT("UTangoDevice::SetTangoRuntimeConfig: Unable to set runtime Config since Tango Service is not running."));
 		return false;
@@ -300,7 +304,7 @@ bool UTangoDevice::SetTangoRuntimeConfig(FTangoRuntimeConfig Configuration, bool
 		UE_LOG(TangoPlugin, Warning, TEXT("UTangoDevice::SetTangoRuntimeConfig: Unable to set EnableDepth to RuntimeConfig since Config has no DepthCapabilites enabled"));
 	}
 #if PLATFORM_ANDROID
-	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::SetTangoRuntimeConfig: Rate is: %d "),(Configuration.bEnableDepth ? Configuration.RuntimeDepthFramerate : 0));
+	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::SetTangoRuntimeConfig: Rate is: %d "), (Configuration.bEnableDepth ? Configuration.RuntimeDepthFramerate : 0));
 	bSuccess = TangoConfig_setInt32(Config_, "config_runtime_depth_framerate", Configuration.bEnableDepth ? Configuration.RuntimeDepthFramerate : 0) == TANGO_SUCCESS && bSuccess;
 	if (!bPreRuntime)
 	{
@@ -310,7 +314,7 @@ bool UTangoDevice::SetTangoRuntimeConfig(FTangoRuntimeConfig Configuration, bool
 #endif
 
 
-	if (Configuration.bEnableColorCamera  && !CurrentConfig.bEnableColorCameraCapabilities)
+	if (Configuration.bEnableColorCamera && !CurrentConfig.bEnableColorCameraCapabilities)
 	{
 		Configuration.bEnableColorCamera = false;
 		UE_LOG(TangoPlugin, Warning, TEXT("UTangoDevice::SetTangoRuntimeConfig: Unable to set EnableColorCamera to RuntimeConfig since Config has no ColorCameraCapabilites enabled"));
@@ -448,18 +452,18 @@ bool UTangoDevice::ApplyConfig()
 			UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice: Loaded area description %s: %s"), *CurrentConfig.AreaDescription.Filename, *CurrentConfig.AreaDescription.UUID);
 		}
 	}
-	
+
 	if (!bSuccess)
 	{
 		UE_LOG(TangoPlugin, Warning, TEXT(" UTangoDevice::ApplyConfig: ApplyConfig FAILED because the Config parameters could not be set."));
 	}
 	else
 	{
-		
+
 	}
 
 
-	bSuccess = SetTangoRuntimeConfig(CurrentRuntimeConfig,true) && bSuccess;
+	bSuccess = SetTangoRuntimeConfig(CurrentRuntimeConfig, true) && bSuccess;
 
 	return bSuccess;
 }
@@ -469,27 +473,27 @@ bool UTangoDevice::ApplyConfig()
  */
 void UTangoDevice::ConnectTangoService()
 {
-    
-    //@TODO: Call the Java RequestConnectToService function
-    UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::ConnectTangoService: starting service binding request call."));
-    //Make the call to Java
-    
+
+	//@TODO: Call the Java RequestConnectToService function
+	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::ConnectTangoService: starting service binding request call."));
+	//Make the call to Java
+
 #if PLATFORM_ANDROID
-    jobject AppContext = NULL;
-    
-    if (JNIEnv* Env = FAndroidApplication::GetJavaEnv())
-    {
-        
-        static jmethodID RequestTangoServiceMethod = FJavaWrapper::FindMethod(Env, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_RequestTangoService", "()V", false);
-        
-        FJavaWrapper::CallVoidMethod(Env, FJavaWrapper::GameActivityThis, RequestTangoServiceMethod);
-    }
-    else
-    {
-        UE_LOG(TangoPlugin, Error, TEXT("UTangoDevice::ConnectTangoService: Could not get Java environment!"));
-    }
+	jobject AppContext = NULL;
+
+	if (JNIEnv* Env = FAndroidApplication::GetJavaEnv())
+	{
+
+		static jmethodID RequestTangoServiceMethod = FJavaWrapper::FindMethod(Env, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_RequestTangoService", "()V", false);
+
+		FJavaWrapper::CallVoidMethod(Env, FJavaWrapper::GameActivityThis, RequestTangoServiceMethod);
+	}
+	else
+	{
+		UE_LOG(TangoPlugin, Error, TEXT("UTangoDevice::ConnectTangoService: Could not get Java environment!"));
+	}
 #endif
-    UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::ConnectTangoService: Finished sevice binding request call."));
+	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::ConnectTangoService: Finished sevice binding request call."));
 
 }
 
@@ -498,42 +502,42 @@ void UTangoDevice::ConnectTangoService()
  */
 void UTangoDevice::UnbindTangoService()
 {
-    
-    //@TODO: Call the Java RequestConnectToService function
-    UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::UnbindTangoService: starting service unbinding request call."));
-    //Make the call to Java
-    
+
+	//@TODO: Call the Java RequestConnectToService function
+	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::UnbindTangoService: starting service unbinding request call."));
+	//Make the call to Java
+
 #if PLATFORM_ANDROID
-    jobject AppContext = NULL;
-    
-    if (JNIEnv* Env = FAndroidApplication::GetJavaEnv())
-    {
-        
-        static jmethodID TestJavaRoundTripMethod = FJavaWrapper::FindMethod(Env, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_UnbindTangoService", "()V", false);
-        
-        FJavaWrapper::CallVoidMethod(Env, FJavaWrapper::GameActivityThis, TestJavaRoundTripMethod);
-    }
-    else
-    {
-        UE_LOG(TangoPlugin, Error, TEXT("UTangoDevice::UnbindTangoService: Could not get Java environment!"));
-    }
+	jobject AppContext = NULL;
+
+	if (JNIEnv* Env = FAndroidApplication::GetJavaEnv())
+	{
+
+		static jmethodID TestJavaRoundTripMethod = FJavaWrapper::FindMethod(Env, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_UnbindTangoService", "()V", false);
+
+		FJavaWrapper::CallVoidMethod(Env, FJavaWrapper::GameActivityThis, TestJavaRoundTripMethod);
+	}
+	else
+	{
+		UE_LOG(TangoPlugin, Error, TEXT("UTangoDevice::UnbindTangoService: Could not get Java environment!"));
+	}
 #endif
-    UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::UnbindTangoService: Finished sevice unbinding request call."));
-    
+	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::UnbindTangoService: Finished sevice unbinding request call."));
+
 }
 
 
 #if PLATFORM_ANDROID
 extern "C"
 {
-    //JavaThunkCpp: Native function which is called by Java code. Completes connection to the Tango service.
-    JNIEXPORT void JNICALL
-    Java_com_projecttango_plugin_TangoInterface_OnJavaTangoServiceConnected(JNIEnv* Env, jobject, jobject IBinder)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("UTangoDevice::OnJavaServiceConnected: Success- C++ function called from Java!"));
-        //Java service connection finished, complete C API connection	
+	//JavaThunkCpp: Native function which is called by Java code. Completes connection to the Tango service.
+	JNIEXPORT void JNICALL
+		Java_com_projecttango_plugin_TangoInterface_OnJavaTangoServiceConnected(JNIEnv* Env, jobject, jobject IBinder)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UTangoDevice::OnJavaServiceConnected: Success- C++ function called from Java!"));
+		//Java service connection finished, complete C API connection	
 		UTangoDevice::Get().BindAndCompleteConnectionToService(Env, IBinder);
-    }
+	}
 }
 #endif
 
@@ -546,19 +550,19 @@ extern "C"
 void UTangoDevice::BindAndCompleteConnectionToService(JNIEnv* Env, jobject IBinder)
 {
 	FScopeLock ScopeLock(&EventLock);
-    //Bind to the Tango service
-    if (TangoService_setBinder(Env, IBinder) != TANGO_SUCCESS)
-    {
-        UE_LOG(TangoPlugin, Error, TEXT(" UTangoDevice::BindAndCompleteConnectionToService: could not bind to Tango Service."));
-    }
-    else
-    {
-        UE_LOG(TangoPlugin, Log, TEXT(" UTangoDevice::BindAndCompleteConnectionToService: successfully bound to Tango Service."));
-    }
-    
-    //Apply the service Configuration
-    ApplyConfig();
-    
+	//Bind to the Tango service
+	if (TangoService_setBinder(Env, IBinder) != TANGO_SUCCESS)
+	{
+		UE_LOG(TangoPlugin, Error, TEXT(" UTangoDevice::BindAndCompleteConnectionToService: could not bind to Tango Service."));
+	}
+	else
+	{
+		UE_LOG(TangoPlugin, Log, TEXT(" UTangoDevice::BindAndCompleteConnectionToService: successfully bound to Tango Service."));
+	}
+
+	//Apply the service Configuration
+	ApplyConfig();
+
 	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::BindAndCompleteConnectionToService: Called"));
 	if (Config_ == nullptr)
 	{
@@ -566,11 +570,11 @@ void UTangoDevice::BindAndCompleteConnectionToService(JNIEnv* Env, jobject IBind
 		return;
 	}
 
-    //Refresh Java global reference here
-    /*@TODO: This is a little hacky, see if we can get a reference to a state which won't be garbage collected so we don't need to do this.*/
-    PopulateAppContext();
-    
-    //Attempt to connect to the now bound service
+	//Refresh Java global reference here
+	/*@TODO: This is a little hacky, see if we can get a reference to a state which won't be garbage collected so we don't need to do this.*/
+	PopulateAppContext();
+
+	//Attempt to connect to the now bound service
 	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::BindAndCompleteConnectionToService: Connecting!"));
 	ConnectionState = TangoService_connect(AppContextReference, Config_) == TANGO_SUCCESS ? CONNECTED : FAILED_TO_CONNECT;
 
@@ -655,17 +659,17 @@ void UTangoDevice::DisconnectTangoService(bool bByAppServicePause)
 {
 	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::DisconnectTangoService: Called"));
 
-    if (GetTangoServiceStatus() == CONNECTED)
+	if (GetTangoServiceStatus() == CONNECTED)
 	{
 		UE_LOG(TangoPlugin, Log, TEXT(" UTangoDevice::DisconnectTangoService: will now disconnect!"));
-   
-        //Disconnect from the C service
+
+		//Disconnect from the C service
 		TangoService_disconnect();
-        
-        //Unbind from the Java-level service after the TangoService_disconnect call
-        UnbindTangoService();
-        
-        //Mark the current connection state and broadcast the disconnection
+
+		//Unbind from the Java-level service after the TangoService_disconnect call
+		UnbindTangoService();
+
+		//Mark the current connection state and broadcast the disconnection
 		ConnectionState = bByAppServicePause ? DISCONNECTED_BY_APPSERVICEPAUSE : DISCONNECTED;
 		BroadCastDisconnect();
 	}
@@ -681,31 +685,27 @@ void UTangoDevice::DisconnectTangoService(bool bByAppServicePause)
 
 void UTangoDevice::AppServiceResume()
 {
-	RunOnMainThread([this]() -> void
+	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServiceResume: Called"));
+	if (GetTangoServiceStatus() == DISCONNECTED_BY_APPSERVICEPAUSE)//We only reconnect when we disconnected the Tango by AppServicePause first!
 	{
-		UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServiceResume: Called"));
-		if (GetTangoServiceStatus() == DISCONNECTED_BY_APPSERVICEPAUSE)//We only reconnect when we disconnected the Tango by AppServicePause first!
-		{
-			UE_LOG(TangoPlugin, Log, TEXT(" UTangoDevice::AppServiceResume: Connect service called"));
-			//ApplyConfig();
-			ConnectTangoService();
-		}
-		UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServiceResume: FINISHED"));
-	});
+		UE_LOG(TangoPlugin, Log, TEXT(" UTangoDevice::AppServiceResume: Connect service called"));
+		//ApplyConfig();
+		ConnectTangoService();
+	}
+	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServiceResume: FINISHED"));
+
 }
 
 void UTangoDevice::AppServicePause()
 {
-	RunOnMainThread([this]() -> void
+	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServicePause: Called"));
+	if (false && IsTangoServiceRunning()) // temporary hack: resume fails if we kill tango
 	{
-		UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServicePause: Called"));
-		if (IsTangoServiceRunning()) //We only disconnect when it is already running!
-		{
-			DeallocateResources();
-			DisconnectTangoService(true);
-		}
-		UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServicePause: FINISHED"));
-	});
+		DeallocateResources();
+		DisconnectTangoService(true);
+	}
+	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServicePause: FINISHED"));
+
 }
 
 #endif
