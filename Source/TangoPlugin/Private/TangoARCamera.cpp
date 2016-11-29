@@ -15,8 +15,11 @@ limitations under the License.*/
 #include "TangoPluginPrivatePCH.h"
 #include "TangoARCamera.h"
 #include "TangoDevice.h"
-#include "TangoViewExtension.h"
 #include "TangoARHelpers.h"
+
+UTangoARCamera::~UTangoARCamera()
+{
+}
 
 UTangoARCamera::UTangoARCamera(const FObjectInitializer& Init) : ARScreen(nullptr), Super(Init)
 {
@@ -25,14 +28,6 @@ UTangoARCamera::UTangoARCamera(const FObjectInitializer& Init) : ARScreen(nullpt
 	FrameOfReference = FTangoCoordinateFramePair(ETangoCoordinateFrameType::START_OF_SERVICE, ETangoCoordinateFrameType::CAMERA_COLOR);
 }
 
-FTangoPoseData UTangoARCamera::GetCurrentPoseRENDERTHREAD(float TimeStamp)
-{
-	if (UTangoDevice::Get().GetTangoDeviceMotionPointer() == nullptr)
-	{
-		return FTangoPoseData();
-	}
-	return UTangoDevice::Get().GetTangoDeviceMotionPointer()->GetPoseAtTime(FrameOfReference, TimeStamp);
-}
 
 AActor * UTangoARCamera::GetActor()
 {
@@ -63,7 +58,7 @@ void UTangoARCamera::InitializeComponent()
 
 void UTangoARCamera::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
 {
-	if (UTangoDevice::Get().GetCurrentConfig().AreaDescription.UUID.Len() > 0)
+	if (UTangoDevice::Get().IsUsingAdf())
 	{
 		FrameOfReference = FTangoCoordinateFramePair(ETangoCoordinateFrameType::AREA_DESCRIPTION, ETangoCoordinateFrameType::CAMERA_COLOR);
 	}
@@ -93,6 +88,7 @@ void UTangoARCamera::TickComponent(float DeltaTime, enum ELevelTick TickType, FA
 			ARScreen->SetRelativeLocation((LL + UR)*0.5f);
 			ARScreen->SetRelativeRotation(FQuat::Identity);
 			ARScreen->SetRelativeScale3D(FVector(1, FMath::Abs(UR.Y - LL.Y) / (100.0f*(1.0f - 2.0f*UVShift.X)), FMath::Abs(LL.Z - UR.Z) / (100.0f*(1.0f - 2.0f*UVShift.Y))));
+			UE_LOG(TangoPlugin, Error, TEXT("UTangoARCamera::TickComponent: Created ARScreen"));
 		}
 		else
 		{
@@ -111,16 +107,13 @@ void UTangoARCamera::TickComponent(float DeltaTime, enum ELevelTick TickType, FA
 			Owner->SetActorLocation(LatestPose.Position);
 			Owner->SetActorRotation(FRotator(LatestPose.QuatRotation));
 		}
+		else
+		{
+			UE_LOG(TangoPlugin, Warning, TEXT("Camera pose not valid: %d, frame of reference: %d, %d"), (int32)LatestPose.StatusCode, (int32)FrameOfReference.BaseFrame, (int32)FrameOfReference.TargetFrame);
+		}
 	}
 	else
 	{
 		UE_LOG(TangoPlugin, Warning, TEXT("UTangoARCamera::TickComponent: Could not update transfrom because Tango Service is not connect or has motion tracking disabled!"));
-	}
-
-	if (!ViewExtension.IsValid() && GEngine)
-	{
-		TSharedPtr< FTangoViewExtension, ESPMode::ThreadSafe > NewViewExtension(new FTangoViewExtension(Cast<ITangoARInterface>(this)));
-		ViewExtension = NewViewExtension;
-		GEngine->ViewExtensions.Add(ViewExtension);
 	}
 }

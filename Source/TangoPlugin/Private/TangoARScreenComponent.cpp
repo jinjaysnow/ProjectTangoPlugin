@@ -121,4 +121,8 @@ void UTangoARScreenComponent::TickComponent(float DeltaTime, enum ELevelTick Tic
 			}
 		}
 	}
+	else if (UTangoDevice::Get().GetTangoDeviceImagePointer() == nullptr)
+	{
+		bInitializedMaterial = false;
+	}
 }

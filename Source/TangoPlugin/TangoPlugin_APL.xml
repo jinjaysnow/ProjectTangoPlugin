@@ -26,7 +26,7 @@ limitations under the License.
 
 	<!-- Tango updates applied to AndroidManifest.xml -->
 	<androidManifestUpdates>
-		<log text="TangoPlugin Plugin Android Manifest Additions"/>
+	  <log text="TangoPlugin Plugin Android Manifest Additions"/>
 		
 		<setElement result="bTangoAreaLearningEnabledElement" value="meta-data" />
 		<addAttribute tag="$bTangoAreaLearningEnabledElement" name="android:name" value="com.projecttango.bTangoAreaLearningEnabled" />

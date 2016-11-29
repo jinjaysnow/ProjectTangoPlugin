@@ -13,10 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.*/
 
 #include "TangoPluginPrivatePCH.h"
-#include "TangoViewExtension.h"
 #include "TangoMotionComponent.h"
 #include "TangoImageComponent.h"
 #include "TangoDevice.h"
+
+UTangoMotionComponent::~UTangoMotionComponent()
+{
+}
 
 UTangoMotionComponent::UTangoMotionComponent() : Super()
 {
@@ -104,22 +107,8 @@ void UTangoMotionComponent::TickComponent(float DeltaTime, enum ELevelTick TickT
 #endif
 	}
 
-	if (!ViewExtension.IsValid() && GEngine)
-	{
-		TSharedPtr< FTangoViewExtension, ESPMode::ThreadSafe > NewViewExtension(new FTangoViewExtension(Cast<ITangoARInterface>(this)));
-		ViewExtension = NewViewExtension;
-		GEngine->ViewExtensions.Add(ViewExtension);
-	}
 }
 
-FTangoPoseData UTangoMotionComponent::GetCurrentPoseRENDERTHREAD(float TimeStamp)
-{
-	if (UTangoDevice::Get().GetTangoDeviceMotionPointer() == nullptr)
-	{
-		return FTangoPoseData();
-	}
-	return UTangoDevice::Get().GetTangoDeviceMotionPointer()->GetPoseAtTime(MotionComponentFrameOfReference, 0);
-}
 
 AActor * UTangoMotionComponent::GetActor()
 {

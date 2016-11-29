@@ -103,7 +103,6 @@ public:
 	void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
 	//ITangoARInterface
 public:
-	virtual FTangoPoseData GetCurrentPoseRENDERTHREAD(float TimeStamp) override;
 	virtual AActor* GetActor() override;
 	virtual USceneComponent* AsSceneComponent() override;
 	virtual FTransform CalcComponentToWorld(FTransform Transform) override;

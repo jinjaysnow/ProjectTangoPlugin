@@ -26,7 +26,6 @@ class ITangoARInterface
 {
 	GENERATED_IINTERFACE_BODY()
 public:
-	virtual FTangoPoseData GetCurrentPoseRENDERTHREAD(float TimeStamp) { return FTangoPoseData(); }
 	virtual AActor* GetActor() { return nullptr; }
 	virtual USceneComponent* AsSceneComponent() { return nullptr;  }
 	virtual FTransform CalcComponentToWorld(FTransform Transform) { return FTransform(); }

@@ -14,6 +14,7 @@ limitations under the License.*/
 #include "TangoPluginPrivatePCH.h"
 #include "TangoDevice.h"
 #include "TangoFromToCObject.h"
+#include "ITangoAR.h"
 #include "Tickable.h"
 
 #include <UnrealTemplate.h>
@@ -23,6 +24,8 @@ limitations under the License.*/
 #include "Android/AndroidJNI.h"
 #include "AndroidApplication.h"
 #endif
+
+UTangoARInterface::UTangoARInterface(const FObjectInitializer& Init) : Super(Init) {}
 
 class RunOnMainThread : public FTickableGameObject
 {
@@ -172,6 +175,9 @@ void UTangoDevice::DeallocateResources()
 		GetTangoDeviceImagePointer()->ConditionalBeginDestroy();
 		ImageHelper = nullptr;
 	}
+	YTexture = nullptr;
+	CbTexture = nullptr;
+	bDataIsFilled = false;
 }
 
 UTangoDevice::~UTangoDevice()
@@ -280,6 +286,11 @@ void UTangoDevice::StartTangoService(FTangoConfig & Config, FTangoRuntimeConfig&
 #endif
 }
 
+
+bool UTangoDevice::IsUsingAdf() const
+{
+	return CurrentConfig.AreaDescription.UUID.Len() > 0 || CurrentConfig.bUseCloudAdf;
+}
 
 bool UTangoDevice::SetTangoRuntimeConfig(FTangoRuntimeConfig Configuration, bool bPreRuntime)
 {
@@ -462,7 +473,8 @@ bool UTangoDevice::ApplyConfig()
 
 	}
 
-
+	FString ConfigString(TangoConfig_toString(Config_));
+	UE_LOG(TangoPlugin, Log, TEXT("Tango Config: %d: %s"), bSuccess, *ConfigString);
 	bSuccess = SetTangoRuntimeConfig(CurrentRuntimeConfig, true) && bSuccess;
 
 	return bSuccess;
@@ -699,7 +711,7 @@ void UTangoDevice::AppServiceResume()
 void UTangoDevice::AppServicePause()
 {
 	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServicePause: Called"));
-	if (false && IsTangoServiceRunning()) // temporary hack: resume fails if we kill tango
+	if (false && IsTangoServiceRunning()) // temporary hack: motion tracking doesn't recover in resume in Tango Z-release
 	{
 		DeallocateResources();
 		DisconnectTangoService(true);

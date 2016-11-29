@@ -18,143 +18,33 @@ limitations under the License.*/
 
 namespace TangoARHelpers
 {
-	namespace
-	{
-		bool bDataIsFilled = false;
-		FTangoCameraIntrinsics ColorCameraIntrinsics;
-		FMatrix ProjectionMatrix;
-		FVector2D UVShift;
-		FVector2D NearPlaneLowerLeft, NearPlaneUpperRight;
-		FVector2D NearFarDistance;
-
-		static FMatrix FrustumMatrix(float Left, float Right, float Bottom, float Top, float NearVal, float FarVal)
-		{
-			FMatrix Result;
-			Result.SetIdentity();
-			Result.M[0][0] = (2.0f * NearVal) / (Right - Left);
-			Result.M[1][1] = (2.0f * NearVal) / (Top - Bottom);
-			Result.M[2][0] = -(Right + Left) / (Right - Left);
-			Result.M[2][1] = -(Top + Bottom) / (Top - Bottom);
-			Result.M[2][2] = FarVal / (FarVal - NearVal);
-			Result.M[2][3] = 1.0f;
-			Result.M[3][2] = -(FarVal * NearVal) / (FarVal - NearVal);
-			Result.M[3][3] = 0;
-
-			return Result;
-		}
-
-		static void GetNearProjectionPlane(const FIntPoint ViewPortSize)
-		{
-			float WidthRatio = (float)ViewPortSize.X / (float)ColorCameraIntrinsics.Width;
-			float HeightRatio = (float)ViewPortSize.Y / (float)ColorCameraIntrinsics.Height;
-
-			float UOffset, VOffset;
-			if (WidthRatio >= HeightRatio)
-			{
-				UOffset = 0;
-				VOffset = (1 - (HeightRatio / WidthRatio)) / 2;
-			}
-			else
-			{
-				UOffset = (1 - (WidthRatio / HeightRatio)) / 2;
-				VOffset = 0;
-			}
-			UVShift.X = UOffset;
-			UVShift.Y = VOffset;
-			UE_LOG(TangoPlugin, Log, TEXT("FTangoViewExtension::GetNearProjectionPlane: UVShift: %f %f"), UOffset, VOffset);
-			UOffset = 0.05f;
-			VOffset = 0.0f;
-
-			float XScale = NearFarDistance.X / ColorCameraIntrinsics.Fx;
-			float YScale = NearFarDistance.X / ColorCameraIntrinsics.Fy;
-
-			NearPlaneLowerLeft.X = (-ColorCameraIntrinsics.Cx + (UOffset * ColorCameraIntrinsics.Width))*XScale;
-			NearPlaneUpperRight.X = (ColorCameraIntrinsics.Width - ColorCameraIntrinsics.Cx - (UOffset * ColorCameraIntrinsics.Width))*XScale;
-			// OpenGL coordinates has y pointing downwards so we negate this term.
-			NearPlaneLowerLeft.Y = (-ColorCameraIntrinsics.Height + ColorCameraIntrinsics.Cy + (VOffset * ColorCameraIntrinsics.Height))*YScale;
-			NearPlaneUpperRight.Y = (ColorCameraIntrinsics.Cy - (VOffset * ColorCameraIntrinsics.Height))*YScale;
-		}
-
-		static FMatrix GetProjectionMatrix()
-		{
-			FMatrix OffAxisProjectionMatrix = FrustumMatrix(NearPlaneLowerLeft.X, NearPlaneUpperRight.X, NearPlaneLowerLeft.Y, NearPlaneUpperRight.Y, NearFarDistance.X, NearFarDistance.Y);
-
-			FMatrix MatFlipZ;
-			MatFlipZ.SetIdentity();
-			MatFlipZ.M[2][2] = -1.0f;
-			MatFlipZ.M[3][2] = 1.0f;
-
-			FMatrix result = OffAxisProjectionMatrix * MatFlipZ;
-			result.M[2][2] = 0.0f;
-			result.M[3][0] = 0.0f;
-			result.M[3][1] = 0.0f;
-			result *= 1.0f / result.M[0][0];
-			result.M[3][2] = NearFarDistance.X;
-			return result;
-		}
-
-		static bool FillARData()
-		{
-			if (bDataIsFilled)
-			{
-				return true;
-			}
-			ColorCameraIntrinsics = UTangoDevice::Get().GetCameraIntrinsics(ETangoCameraType::COLOR);
-			if (UTangoDevice::Get().IsTangoServiceRunning() && GEngine)
-			{
-				if (UTangoDevice::Get().GetTangoDeviceMotionPointer() && GEngine->GameViewport)
-				{
-					if (GEngine->GameViewport->Viewport)
-					{
-						NearFarDistance.X = GNearClippingPlane;
-						NearFarDistance.Y = 12000.0f;
-
-						GetNearProjectionPlane(GEngine->GameViewport->Viewport->GetSizeXY());
-
-						ProjectionMatrix = GetProjectionMatrix();
-						bDataIsFilled = true;
-					}
-				}
-			}
-			return false;
-		}
-	}
-
-	static FMatrix GetUnadjustedProjectionMatrix()
-	{
-		FillARData();
-		return FrustumMatrix(NearPlaneLowerLeft.X, NearPlaneUpperRight.X, NearPlaneLowerLeft.Y, NearPlaneUpperRight.Y, NearFarDistance.X, NearFarDistance.Y);
-	}
-
 	static FTangoCameraIntrinsics GetARCameraIntrinsics()
 	{
-		FillARData();
-		return ColorCameraIntrinsics;
+		return UTangoDevice::Get().GetARCameraIntrinsics();
 	}
 
 	static FVector2D GetARUVShift()
 	{
-		FillARData();
-		return UVShift;
+		return UTangoDevice::Get().GetARUVShift();
 	}
 
 	static FMatrix GetARProjectionMatrix()
 	{
-		FillARData();
-		return ProjectionMatrix;
+		return UTangoDevice::Get().GetARProjectionMatrix();
+	}
+
+	static FMatrix GetUnadjustedProjectionMatrix()
+	{
+		return UTangoDevice::Get().GetUnadjustedProjectionMatrix();
 	}
 
 	static void GetNearPlane(FVector2D& LowerLeft,FVector2D& UpperRight,FVector2D& NearFarPlaneDistance)
 	{
-		FillARData();
-		LowerLeft = NearPlaneLowerLeft;
-		UpperRight = NearPlaneUpperRight;
-		NearFarPlaneDistance = NearFarDistance;
+		return UTangoDevice::Get().GetNearPlane(LowerLeft, UpperRight, NearFarPlaneDistance);
 	}
 
 	static bool DataIsReady()
 	{
-		FillARData();
-		return bDataIsFilled;
+		return UTangoDevice::Get().DataIsReady();
 	}
 }

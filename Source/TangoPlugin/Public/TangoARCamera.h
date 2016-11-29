@@ -30,7 +30,6 @@ public:
 	~UTangoARCamera();//In TangoViewExtension.cpp!
 	//ITangoARInterface
 public:
-	virtual FTangoPoseData GetCurrentPoseRENDERTHREAD(float TimeStamp) override;
 	virtual AActor* GetActor() override;
 	virtual USceneComponent* AsSceneComponent() override;
 	virtual FTransform CalcComponentToWorld(FTransform Transform) override;

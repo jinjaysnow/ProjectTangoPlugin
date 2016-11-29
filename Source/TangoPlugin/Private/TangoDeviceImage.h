@@ -14,8 +14,6 @@ limitations under the License.*/
 
 #pragma once
 
-#include "TangoViewExtension.h"
-
 #if PLATFORM_ANDROID
 #include "tango_client_api.h"
 #endif
@@ -82,6 +80,4 @@ private:
 public:
 	bool IsNewDataAvail() { return bNewDataAvailable; }
 	void DataSet(double Stamp) { bNewDataAvailable = false; bTexturesHaveDataInThem = true; ImageBufferTimestamp = Stamp; }
-
-	TSharedPtr< FTangoViewExtension, ESPMode::ThreadSafe > ViewExtension;
 };

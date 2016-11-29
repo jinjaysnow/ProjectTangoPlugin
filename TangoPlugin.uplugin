@@ -10,7 +10,7 @@
     "MarketplaceURL" : "com.epicgames.launcher://ue/marketplace/content/3870a1591e02409aa6b68b3aec338fbc",
 	"Description" : "Tango Plugin enables the use of Tango devices and sensors with Unreal 4",
 	"Category" : "Augmented Reality",
-	"EnabledByDefault" : false,
+	"EnabledByDefault" : true,
 	"IsBetaVersion": false,
 	"CanContainContent": true,
 	"Modules" :

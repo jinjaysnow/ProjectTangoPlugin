@@ -132,7 +132,6 @@ namespace
 				P.UEtoBaseFrame = ToUESpace[P.Pair.BaseFrame].Inverse();
 				P.TargetFrameToUE = ToUESpace[P.Pair.TargetFrame];
 
-
 				if (DeviceToOffset.Contains(P.Pair.BaseFrame))//If we are querying from something on the device ...
 				{
 					if (!DeviceToOffset.Contains(P.Pair.TargetFrame))//... to something in the world ...
@@ -152,7 +151,7 @@ namespace
 				{
 					// ... we need to query to device and apply the offset manually
 					P.OffsetFromDevice = DeviceToOffset[P.Pair.TargetFrame];
-					P.bNeedToBeQueriedFromDevice = true; 
+					P.bNeedToBeQueriedFromDevice = true;
 					P.bIsStatic = false;
 				}
 				else // Anything else is just fine

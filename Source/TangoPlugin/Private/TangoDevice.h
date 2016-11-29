@@ -18,7 +18,6 @@ limitations under the License.*/
 #include "TangoDeviceImage.h"
 #include "TangoDeviceAreaLearning.h"
 #include "TangoEventComponent.h"
-#include "TangoViewExtension.h"
 
 #include <sstream>
 #include <stdlib.h>
@@ -42,7 +41,7 @@ private:
 	static UTangoDevice * Instance;
 	UTangoDevice();
 	void ProperInitialize();
-    void DeallocateResources();
+	void DeallocateResources();
 	~UTangoDevice();
 	virtual void BeginDestroy() override;
 
@@ -61,7 +60,7 @@ private:
 
 public:
 	static UTangoDevice& Get();
-    
+
 	//Getter functions for different submodules
 	TangoDevicePointCloud* GetTangoDevicePointCloudPointer();
 	UTangoDeviceMotion* GetTangoDeviceMotionPointer();
@@ -72,7 +71,7 @@ public:
 	// Lifecycle //
 	///////////////
 public:
-	
+
 	//Tango Service Enums
 	enum ServiceStatus
 	{
@@ -88,9 +87,9 @@ public:
 	ServiceStatus GetTangoServiceStatus();
 	void RestartService(FTangoConfig& Config, FTangoRuntimeConfig& RuntimeConfig);
 	void StartTangoService(FTangoConfig& Config, FTangoRuntimeConfig& RuntimeConfig);
-	bool SetTangoRuntimeConfig(FTangoRuntimeConfig Configuration,bool bPreRuntime = false);
+	bool SetTangoRuntimeConfig(FTangoRuntimeConfig Configuration, bool bPreRuntime = false);
 	void StopTangoService();
-	
+
 	FTangoConfig& GetCurrentConfig();
 	FTangoRuntimeConfig& GetCurrentRuntimeConfig();
 
@@ -108,18 +107,18 @@ private:
 	bool ApplyConfig();
 	void ConnectTangoService();
 	void DisconnectTangoService(bool bByAppServicePause = false);
-    //To be called during the final phase of DisconnectTangoService
-    void UnbindTangoService();
+	//To be called during the final phase of DisconnectTangoService
+	void UnbindTangoService();
 	//Delegate binding functions
 	void AppServiceResume();
 	void AppServicePause();
 
 public:
-    //Note: last part of the new async connection method
-    void BindAndCompleteConnectionToService(JNIEnv* Env, jobject IBinder);
+	//Note: last part of the new async connection method
+	void BindAndCompleteConnectionToService(JNIEnv* Env, jobject IBinder);
 
 #endif
-    
+
 	///////////////////////////
 	// General functionality //
 	///////////////////////////
@@ -133,9 +132,10 @@ public:
 	TArray<FTangoAreaDescription> GetAreaDescriptions();
 	TArray<FString> GetAllUUIDs();
 	FTangoAreaDescriptionMetaData GetMetaData(FString UUID, bool& bIsSuccessful);
-    void SaveMetaData(FString UUID, FTangoAreaDescriptionMetaData NewMetaData, bool& bIsSuccessful);
+	void SaveMetaData(FString UUID, FTangoAreaDescriptionMetaData NewMetaData, bool& bIsSuccessful);
 	void ImportCurrentArea(FString Filepath, bool& bIsSuccessful);
 	void ExportCurrentArea(FString UUID, FString Filepath, bool& bIsSuccessful);
+	bool IsUsingAdf() const;
 	/////////////////
 	// Tango Event //
 	/////////////////
@@ -143,27 +143,27 @@ public:
 public:
 	void AttachTangoEventComponent(UTangoEventComponent* Component);
 #if PLATFORM_ANDROID
-    void PushTangoEvent(const FTangoEvent);
+	void PushTangoEvent(const FTangoEvent);
 #endif
-    
+
 private:
 	void ConnectEventCallback();
 	void BroadCastConnect();
 	void BroadCastDisconnect();
 	void BroadCastEvents();
 #if PLATFORM_ANDROID
-    void OnTangoEvent(const TangoEvent * Event);
-    void PopulateAppContext();
-    void DePopulateAppContext();
+	void OnTangoEvent(const TangoEvent * Event);
+	void PopulateAppContext();
+	void DePopulateAppContext();
 #endif
 	UPROPERTY(transient)
-	TArray<UTangoEventComponent*> TangoEventComponents;
+		TArray<UTangoEventComponent*> TangoEventComponents;
 	TArray<FTangoEvent> CurrentEvents;
 	//For less blocking :(
 	TArray<FTangoEvent> CurrentEventsCopy;
 	FCriticalSection EventLock;
 #if PLATFORM_ANDROID
-    jobject AppContextReference;
+	jobject AppContextReference;
 #endif
 
 	/////////////////////
@@ -189,4 +189,149 @@ public:
 		TArray<UTangoPointCloudComponent*> PointCloudComponents;
 	TArray<TArray<FTangoCoordinateFramePair>> RequestedPairs;
 	void AddTangoMotionComponent(UTangoMotionComponent* Component, TArray<FTangoCoordinateFramePair>& Requests);
+
+	// ARHelpers data
+
+	bool bDataIsFilled = false;
+	FTangoCameraIntrinsics ColorCameraIntrinsics;
+	FMatrix ProjectionMatrix;
+	FVector2D UVShift;
+	FVector2D NearPlaneLowerLeft, NearPlaneUpperRight;
+	FVector2D NearFarDistance;
+
+	static FMatrix FrustumMatrix(float Left, float Right, float Bottom, float Top, float NearVal, float FarVal)
+	{
+		FMatrix Result;
+		Result.SetIdentity();
+		Result.M[0][0] = (2.0f * NearVal) / (Right - Left);
+		Result.M[1][1] = (2.0f * NearVal) / (Top - Bottom);
+		Result.M[2][0] = -(Right + Left) / (Right - Left);
+		Result.M[2][1] = -(Top + Bottom) / (Top - Bottom);
+		Result.M[2][2] = FarVal / (FarVal - NearVal);
+		Result.M[2][3] = 1.0f;
+		Result.M[3][2] = -(FarVal * NearVal) / (FarVal - NearVal);
+		Result.M[3][3] = 0;
+
+		return Result;
+	}
+
+	void GetNearProjectionPlane(const FIntPoint ViewPortSize)
+	{
+		float WidthRatio = (float)ViewPortSize.X / (float)ColorCameraIntrinsics.Width;
+		float HeightRatio = (float)ViewPortSize.Y / (float)ColorCameraIntrinsics.Height;
+
+		float UOffset, VOffset;
+		if (WidthRatio >= HeightRatio)
+		{
+			UOffset = 0;
+			VOffset = (1 - (HeightRatio / WidthRatio)) / 2;
+		}
+		else
+		{
+			UOffset = (1 - (WidthRatio / HeightRatio)) / 2;
+			VOffset = 0;
+		}
+		UVShift.X = UOffset;
+		UVShift.Y = VOffset;
+		UE_LOG(TangoPlugin, Log, TEXT("FTangoViewExtension::GetNearProjectionPlane: UVShift: %f %f"), UOffset, VOffset);
+		UOffset = 0.05f;
+		VOffset = 0.0f;
+
+		float XScale = NearFarDistance.X / ColorCameraIntrinsics.Fx;
+		float YScale = NearFarDistance.X / ColorCameraIntrinsics.Fy;
+
+		NearPlaneLowerLeft.X = (-ColorCameraIntrinsics.Cx + (UOffset * ColorCameraIntrinsics.Width))*XScale;
+		NearPlaneUpperRight.X = (ColorCameraIntrinsics.Width - ColorCameraIntrinsics.Cx - (UOffset * ColorCameraIntrinsics.Width))*XScale;
+		// OpenGL coordinates has y pointing downwards so we negate this term.
+		NearPlaneLowerLeft.Y = (-ColorCameraIntrinsics.Height + ColorCameraIntrinsics.Cy + (VOffset * ColorCameraIntrinsics.Height))*YScale;
+		NearPlaneUpperRight.Y = (ColorCameraIntrinsics.Cy - (VOffset * ColorCameraIntrinsics.Height))*YScale;
+	}
+
+	FMatrix GetProjectionMatrix()
+	{
+		FMatrix OffAxisProjectionMatrix = FrustumMatrix(NearPlaneLowerLeft.X, NearPlaneUpperRight.X, NearPlaneLowerLeft.Y, NearPlaneUpperRight.Y, NearFarDistance.X, NearFarDistance.Y);
+
+		FMatrix MatFlipZ;
+		MatFlipZ.SetIdentity();
+		MatFlipZ.M[2][2] = -1.0f;
+		MatFlipZ.M[3][2] = 1.0f;
+
+		FMatrix result = OffAxisProjectionMatrix * MatFlipZ;
+		result.M[2][2] = 0.0f;
+		result.M[3][0] = 0.0f;
+		result.M[3][1] = 0.0f;
+		result *= 1.0f / result.M[0][0];
+		result.M[3][2] = NearFarDistance.X;
+		return result;
+	}
+
+	bool FillARData()
+	{
+		if (bDataIsFilled)
+		{
+			return true;
+		}
+		ColorCameraIntrinsics = UTangoDevice::Get().GetCameraIntrinsics(ETangoCameraType::COLOR);
+		if (UTangoDevice::Get().IsTangoServiceRunning() && GEngine)
+		{
+			if (UTangoDevice::Get().GetTangoDeviceMotionPointer() && GEngine->GameViewport)
+			{
+				if (GEngine->GameViewport->Viewport)
+				{
+					NearFarDistance.X = GNearClippingPlane;
+					NearFarDistance.Y = 12000.0f;
+
+					GetNearProjectionPlane(GEngine->GameViewport->Viewport->GetSizeXY());
+
+					ProjectionMatrix = GetProjectionMatrix();
+					bDataIsFilled = true;
+				}
+			}
+		}
+		return false;
+	}
+
+
+	FMatrix GetUnadjustedProjectionMatrix()
+	{
+		FillARData();
+		return FrustumMatrix(NearPlaneLowerLeft.X, NearPlaneUpperRight.X, NearPlaneLowerLeft.Y, NearPlaneUpperRight.Y, NearFarDistance.X, NearFarDistance.Y);
+	}
+
+	FTangoCameraIntrinsics GetARCameraIntrinsics()
+	{
+		FillARData();
+		return ColorCameraIntrinsics;
+	}
+
+	FVector2D GetARUVShift()
+	{
+		FillARData();
+		return UVShift;
+	}
+
+	FMatrix GetARProjectionMatrix()
+	{
+		FillARData();
+		return ProjectionMatrix;
+	}
+
+	void GetNearPlane(FVector2D& LowerLeft, FVector2D& UpperRight, FVector2D& NearFarPlaneDistance)
+	{
+		FillARData();
+		LowerLeft = NearPlaneLowerLeft;
+		UpperRight = NearPlaneUpperRight;
+		NearFarPlaneDistance = NearFarDistance;
+	}
+
+	bool DataIsReady()
+	{
+		if (!IsTangoServiceRunning())
+		{
+			return bDataIsFilled = false;
+		}
+		FillARData();
+		return bDataIsFilled;
+	}
+
 };

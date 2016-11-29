@@ -137,6 +137,10 @@ bool UTangoDeviceImage::DisconnectCallback()
 
 void UTangoDeviceImage::OnNewDataAvailable()
 {
+	if (!bNewDataAvailable)
+	{
+		UE_LOG(TangoPlugin, Log, TEXT("New image data available"));
+	}
 	bNewDataAvailable = true;
 }
 
@@ -229,9 +233,17 @@ void UTangoDeviceImage::CheckConnectCallback()
 			if (*StateRef == CONNECTSHEDULED)
 			{
 				*StateRef = CONNECTED;
-				TangoService_Experimental_connectTextureIdUnity(TANGO_CAMERA_COLOR, YOpenGLPointer, CbOpenGLPointer, CrOpenGLPointer, this,
+				TangoErrorType Status = TangoService_Experimental_connectTextureIdUnity(TANGO_CAMERA_COLOR, YOpenGLPointer, CbOpenGLPointer, CrOpenGLPointer, this,
 					[](void*, TangoCameraId id) {if (id == TANGO_CAMERA_COLOR && UTangoDevice::Get().GetTangoDeviceImagePointer() != nullptr) UTangoDevice::Get().GetTangoDeviceImagePointer()->OnNewDataAvailable(); }
 				);
+				if (Status != TANGO_SUCCESS)
+				{
+					UE_LOG(TangoPlugin, Log, TEXT("UTangoDeviceImage::connectTextureIdUnity failed"));
+				}
+				else
+				{
+					UE_LOG(TangoPlugin, Log, TEXT("UTangoDeviceImage::CheckConnectCallback: Registered Callback"));
+				}
 			}
 		});
 #endif
@@ -240,13 +252,22 @@ void UTangoDeviceImage::CheckConnectCallback()
 
 void UTangoDeviceImage::TickByDevice()
 {
-	CheckConnectCallback();
-	if (!ViewExtension.IsValid() && GEngine)
+#if PLATFORM_ANDROID
+	if (IsNewDataAvail())
 	{
-		TSharedPtr< FTangoViewExtension, ESPMode::ThreadSafe > NewViewExtension(new FTangoViewExtension(nullptr));
-		ViewExtension = NewViewExtension;
-		GEngine->ViewExtensions.Add(ViewExtension);
+		double Stamp = 0.0;
+
+		if (TangoService_updateTexture(TANGO_CAMERA_COLOR, &Stamp) != TANGO_SUCCESS)
+		{
+			UE_LOG(TangoPlugin, Error, TEXT("TangoService_updateTexture failed"));
+		}
+		else
+		{
+			DataSet(Stamp);
+		}
 	}
+	CheckConnectCallback();
+#endif
 }
 
 UTexture* UTangoDeviceImage::GetYTexture()
@@ -287,11 +308,6 @@ UTexture* UTangoDeviceImage::GetCbTexture()
 
 void UTangoDeviceImage::BeginDestroy()
 {
-	if (ViewExtension.IsValid() && GEngine)
-	{
-		GEngine->ViewExtensions.Remove(ViewExtension);
-	}
-	ViewExtension.Reset();
 	Super::BeginDestroy();
 	UE_LOG(TangoPlugin, Log, TEXT("UTangoDeviceImage::BeginDestroy: destructor called"));
 	DisconnectCallback();

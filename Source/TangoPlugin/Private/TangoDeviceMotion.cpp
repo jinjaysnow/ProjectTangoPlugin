@@ -233,13 +233,19 @@ bool UTangoDeviceMotion::IsLocalized()
 {
 	//@TODO: See if there's a cleaner way to poll the service than getting entire pose value and checking the validity.
 #if PLATFORM_ANDROID
+	TangoCoordinateFramePair FramePair = { TANGO_COORDINATE_FRAME_START_OF_SERVICE, TANGO_COORDINATE_FRAME_DEVICE };
+	if (UTangoDevice::Get().IsUsingAdf())
+	{
+		TangoCoordinateFramePair ADFFramePair = { TANGO_COORDINATE_FRAME_AREA_DESCRIPTION, TANGO_COORDINATE_FRAME_DEVICE };
+		FramePair = ADFFramePair;
+	}
 	TangoPoseData Result;
 
 	////Remember to observe the Tango status in case the system isn't ready yet
 	TangoErrorType ResultOfServiceCall;
-	TangoCoordinateFramePair ADFFramePair = { TANGO_COORDINATE_FRAME_AREA_DESCRIPTION, TANGO_COORDINATE_FRAME_DEVICE };
+	
 
-	ResultOfServiceCall = TangoService_getPoseAtTime(0.0, ADFFramePair, &Result);
+	ResultOfServiceCall = TangoService_getPoseAtTime(0.0, FramePair, &Result);
 
 	if (ResultOfServiceCall == TANGO_SUCCESS)
 	{
