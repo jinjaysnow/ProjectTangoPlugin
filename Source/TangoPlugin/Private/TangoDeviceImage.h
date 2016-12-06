@@ -78,6 +78,6 @@ private:
 
 	bool bNewDataAvailable;
 public:
-	bool IsNewDataAvail() { return bNewDataAvailable; }
+	bool IsNewDataAvail();
 	void DataSet(double Stamp) { bNewDataAvailable = false; bTexturesHaveDataInThem = true; ImageBufferTimestamp = Stamp; }
 };

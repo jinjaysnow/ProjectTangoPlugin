@@ -137,10 +137,6 @@ bool UTangoDeviceImage::DisconnectCallback()
 
 void UTangoDeviceImage::OnNewDataAvailable()
 {
-	if (!bNewDataAvailable)
-	{
-		UE_LOG(TangoPlugin, Log, TEXT("New image data available"));
-	}
 	bNewDataAvailable = true;
 }
 
@@ -250,6 +246,14 @@ void UTangoDeviceImage::CheckConnectCallback()
 	UE_LOG(TangoPlugin, Log, TEXT("UTangoDeviceImage::CheckConnectCallback: UTangoDeviceImage: RegisterCallbacks FINISHED"));
 }
 
+bool UTangoDeviceImage::IsNewDataAvail()
+{
+	if (State != CONNECTED)
+	{
+		return false;
+	}
+	return bNewDataAvailable;
+}
 void UTangoDeviceImage::TickByDevice()
 {
 #if PLATFORM_ANDROID

@@ -97,7 +97,14 @@ public:
 	* @param Target The Unreal Engine / Tango Motion interface object.
 	* @return Returns true if the Tango is currently localized relative to the loaded ADF.
 	*/
-	UFUNCTION(Category = "Tango|Motion", BlueprintPure, meta = (ToolTip = "Returns true if the device pose is localised to the loaded area description specified in the Config (if any).", keyword = "motion, localized, localised, area description"))
+	UFUNCTION(Category = "Tango|Motion", BlueprintPure, meta = (ToolTip = "Returns true if the device pose is currently being tracked.", keyword = "motion, tracking"))
+		bool IsCurrentlyTracking();
+	/*
+	*	Returns true if the Tango is localized relative to the ADF file passed in as an argument in the Tango Config object when connecting to the Tango service.
+	* @param Target The Unreal Engine / Tango Motion interface object.
+	* @return Returns true if the Tango is currently localized relative to the loaded ADF.
+	*/
+	UFUNCTION(Category = "Tango|Motion", BlueprintPure, meta = (ToolTip = "Returns true if the device pose is localised to the loaded area description specified in the Config (if any).", keyword = "motion, localized, localised, area description, adf"))
 		bool IsLocalized();
 
 	void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;

@@ -42,6 +42,4 @@ private:
 	FTangoCoordinateFramePair FrameOfReference;
 	UPROPERTY()
 		UTangoARScreenComponent* ARScreen;
-	TSharedPtr< FTangoViewExtension, ESPMode::ThreadSafe > ViewExtension;
-	friend class FTangoViewExtension;
 };

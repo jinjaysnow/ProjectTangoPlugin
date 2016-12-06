@@ -60,6 +60,27 @@ void UTangoDevice::RunOnMainThread(const TFunction<void()> Runnable)
 	new ::RunOnMainThread(Runnable);
 }
 
+
+class RunOffMainThread : public FRunnable
+{
+	TFunction<void()> Runnable;
+public:
+	RunOffMainThread(const TFunction<void()> InRunnable): Runnable(InRunnable)
+	{
+	}
+
+	virtual uint32 Run() override
+	{
+		Runnable();
+		return 0;
+	}
+};
+
+void UTangoDevice::RunOffMainThread(const TFunction<void()> Runnable)
+{
+	FRunnableThread::Create(new ::RunOffMainThread(Runnable), TEXT("RunOffMainThread"), true, true);
+}
+
 UTangoDevice* UTangoDevice::Instance;
 
 UTangoDevice::UTangoDevice() : UObject(), FTickableGameObject()
@@ -162,19 +183,20 @@ void UTangoDevice::DeallocateResources()
 #endif
 	if (GetTangoDevicePointCloudPointer() != nullptr)
 	{
-		delete GetTangoDevicePointCloudPointer();
+		delete PointCloudHelper;
 		PointCloudHelper = nullptr;
 	}
 	if (GetTangoDeviceMotionPointer() != nullptr)
 	{
-		GetTangoDeviceMotionPointer()->ConditionalBeginDestroy();
 		MotionHelper = nullptr;
 	}
 	if (GetTangoDeviceImagePointer() != nullptr)
 	{
-		GetTangoDeviceImagePointer()->ConditionalBeginDestroy();
+		GetTangoDeviceImagePointer()->DisconnectCallback();
 		ImageHelper = nullptr;
 	}
+	delete AreaHelper;
+	AreaHelper = nullptr;
 	YTexture = nullptr;
 	CbTexture = nullptr;
 	bDataIsFilled = false;
@@ -289,7 +311,7 @@ void UTangoDevice::StartTangoService(FTangoConfig & Config, FTangoRuntimeConfig&
 
 bool UTangoDevice::IsUsingAdf() const
 {
-	return CurrentConfig.AreaDescription.UUID.Len() > 0 || CurrentConfig.bUseCloudAdf;
+	return CurrentConfig.AreaDescription.UUID.Len() > 0 || CurrentConfig.bUseCloudAdf || CurrentConfig.bEnableLearningMode || CurrentConfig.bEnableDriftCorrection;
 }
 
 bool UTangoDevice::SetTangoRuntimeConfig(FTangoRuntimeConfig Configuration, bool bPreRuntime)
@@ -344,6 +366,7 @@ bool UTangoDevice::SetTangoRuntimeConfig(FTangoRuntimeConfig Configuration, bool
 void UTangoDevice::StopTangoService()
 {
 	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::StopTangoService: Called"));
+	DeallocateResources();
 #if PLATFORM_ANDROID
 	DisconnectTangoService();
 #endif
@@ -431,7 +454,14 @@ bool UTangoDevice::ApplyConfig()
 	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_color_mode_auto", CurrentConfig.bColorModeAuto) == TANGO_SUCCESS	&& bSuccess;
 	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_depth", CurrentConfig.bEnableDepthCapabilities) == TANGO_SUCCESS	&& bSuccess;
 	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_high_rate_pose", CurrentConfig.bHighRatePose) == TANGO_SUCCESS	&& bSuccess;
-	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_learning_mode", CurrentConfig.bEnableLearningMode) == TANGO_SUCCESS	&& bSuccess;
+	if (CurrentConfig.bEnableDriftCorrection)
+	{
+		bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_drift_correction", CurrentConfig.bEnableDriftCorrection) == TANGO_SUCCESS	&& bSuccess;
+	}
+	else
+	{
+		bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_learning_mode", CurrentConfig.bEnableLearningMode) == TANGO_SUCCESS	&& bSuccess;
+	}
 	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_low_latency_imu_integration", CurrentConfig.bLowLatencyIMUIntegration) == TANGO_SUCCESS	&& bSuccess;
 	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_motion_tracking", CurrentConfig.bEnableMotionTracking) == TANGO_SUCCESS	&& bSuccess;
 	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_smooth_pose", CurrentConfig.bSmoothPose) == TANGO_SUCCESS	&& bSuccess;
@@ -683,7 +713,7 @@ void UTangoDevice::DisconnectTangoService(bool bByAppServicePause)
 
 		//Mark the current connection state and broadcast the disconnection
 		ConnectionState = bByAppServicePause ? DISCONNECTED_BY_APPSERVICEPAUSE : DISCONNECTED;
-		BroadCastDisconnect();
+		RunOnMainThread([this]() -> void { BroadCastDisconnect(); });
 	}
 	else
 	{

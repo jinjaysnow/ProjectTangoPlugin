@@ -34,19 +34,32 @@ bool UTangoAreaLearningComponent::IsLearningModeEnabled()
 	return UTangoDevice::Get().IsLearningModeEnabled();
 }
 
-FTangoAreaDescription UTangoAreaLearningComponent::SaveCurrentArea(FString Filename, bool& bIsSuccessful)
+void UTangoAreaLearningComponent::SaveCurrentArea(UObject* WorldContextObject, const FString& Filename, struct FLatentActionInfo LatentInfo, FTangoAreaDescription& Result, bool& bIsSuccessful)
 {
-	if (UTangoDevice::Get().GetTangoDeviceAreaLearningPointer())
+	auto* Ptr = UTangoDevice::Get().GetTangoDeviceAreaLearningPointer();
+	if (Ptr != nullptr)
 	{
-     	return UTangoDevice::Get().GetTangoDeviceAreaLearningPointer()->SaveCurrentArea(Filename, bIsSuccessful);
+		if (UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject))
+		{
+			FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
+			if (LatentActionManager.FindExistingAction<FSaveAreaDescriptionAction>(LatentInfo.CallbackTarget, LatentInfo.UUID) == NULL)
+			{
+				LatentActionManager.AddNewAction(LatentInfo.CallbackTarget, LatentInfo.UUID, new FSaveAreaDescriptionAction(Filename, Result, bIsSuccessful, LatentInfo));
+				return;
+			}
+			UE_LOG(TangoPlugin, Warning, TEXT("UTangoAreaLearningComponent::SaveCurrentArea: Save already in progress"));
+		}
+		else
+		{
+			UE_LOG(TangoPlugin, Warning, TEXT("UTangoAreaLearningComponent::SaveCurrentArea: Can't access world"));
+		}
 	}
 	else
 	{
-		UE_LOG(TangoPlugin, Warning, TEXT("UTangoAreaLearningComponent::SaveCurrentArea: Tango Area Learning not enabled"));
-        bIsSuccessful = false;
-		return FTangoAreaDescription();
+		UE_LOG(TangoPlugin, Warning, TEXT("UTangoAreaLearningComponent::SaveCurrentArea: Tango Area Learning not enabled"));  
 	}
-
+	bIsSuccessful = false;
+	Result = FTangoAreaDescription();
 }
 
 FTangoAreaDescriptionMetaData UTangoAreaLearningComponent::GetMetaData(FTangoAreaDescription AreaDescription, bool& bIsSuccessful)

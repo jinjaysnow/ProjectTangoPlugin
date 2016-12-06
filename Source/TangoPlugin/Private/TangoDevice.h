@@ -62,9 +62,13 @@ public:
 	static UTangoDevice& Get();
 
 	//Getter functions for different submodules
+
 	TangoDevicePointCloud* GetTangoDevicePointCloudPointer();
+
 	UTangoDeviceMotion* GetTangoDeviceMotionPointer();
+
 	UTangoDeviceImage* GetTangoDeviceImagePointer();
+
 	TangoDeviceAreaLearning* GetTangoDeviceAreaLearningPointer();
 
 	///////////////
@@ -140,6 +144,7 @@ public:
 	// Tango Event //
 	/////////////////
 	static void RunOnMainThread(const TFunction<void()> Runnable);
+	static void RunOffMainThread(const TFunction<void()> Runnable);
 public:
 	void AttachTangoEventComponent(UTangoEventComponent* Component);
 #if PLATFORM_ANDROID

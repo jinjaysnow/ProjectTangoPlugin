@@ -102,7 +102,7 @@ FWGS_84_PoseData UTangoDeviceMotion::GetWGS_84_PoseAtTime(const ETangoCoordinate
 {
 	FWGS_84_PoseData Result;
 	//Prevent Tango calls before the system is ready, return null data instead
-	if (!(UTangoDevice::Get().IsTangoServiceRunning()) || !IsLocalized())
+	if (!(UTangoDevice::Get().IsTangoServiceRunning()) || !IsLocalized(true))
 	{
 		return Result;
 	}
@@ -140,7 +140,7 @@ FWGS_84_PoseData UTangoDeviceMotion::GetWGS_84_PoseAtTime(const ETangoCoordinate
 FTangoPoseData UTangoDeviceMotion::GetPoseAtTime(FTangoCoordinateFramePair FrameOfReference, float Timestamp)
 {
     //Prevent Tango calls before the system is ready, return null data instead
-    if(!(UTangoDevice::Get().IsTangoServiceRunning()) || !IsLocalized())
+    if(!(UTangoDevice::Get().IsTangoServiceRunning()))
     {
         return FTangoPoseData();
     }
@@ -229,12 +229,12 @@ void UTangoDeviceMotion::ResetMotionTracking()
 #endif
 }
 
-bool UTangoDeviceMotion::IsLocalized()
+bool UTangoDeviceMotion::IsLocalized(bool bAdf)
 {
 	//@TODO: See if there's a cleaner way to poll the service than getting entire pose value and checking the validity.
 #if PLATFORM_ANDROID
 	TangoCoordinateFramePair FramePair = { TANGO_COORDINATE_FRAME_START_OF_SERVICE, TANGO_COORDINATE_FRAME_DEVICE };
-	if (UTangoDevice::Get().IsUsingAdf())
+	if (bAdf)
 	{
 		TangoCoordinateFramePair ADFFramePair = { TANGO_COORDINATE_FRAME_AREA_DESCRIPTION, TANGO_COORDINATE_FRAME_DEVICE };
 		FramePair = ADFFramePair;

@@ -47,7 +47,7 @@ public:
 	
 	void ResetMotionTracking();
 
-	bool IsLocalized();
+	bool IsLocalized(bool bAdf = false);
 
 	void CheckForChangeInRequests();
 

@@ -301,19 +301,22 @@ struct TANGOPLUGIN_API FTangoConfig
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Allow for activation of depth camera"))
 		bool bEnableDepthCapabilities;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Wether the pose should be tracked in high frequency mode"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Whether the pose should be tracked in high frequency mode"))
 		bool bHighRatePose;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Wether ADF learning capabilities should be enabled"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Whether ADF learning capabilities should be enabled"))
 		bool bEnableLearningMode;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Whether COM/ADF learning capabilities should be enabled"))
+		bool bEnableDriftCorrection;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Should low latency IMU be activated"))
 		bool bLowLatencyIMUIntegration;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Wether motion tracking should be activated"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Whether motion tracking should be activated"))
 		bool bEnableMotionTracking;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Wether the pose should be smoothed. Can result in a little bit of lag and inaccuracies"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Whether the pose should be smoothed. Can result in a little bit of lag and inaccuracies"))
 		bool bSmoothPose;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Sets exposure of the color camera"))

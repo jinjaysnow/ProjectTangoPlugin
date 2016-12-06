@@ -47,9 +47,9 @@ public:
 	*	@param IsSuccessful Returns true if the save area description function was successful.
 	*	@return The UUID/Filename associated with the newly created ADF.
 	*/
-	UFUNCTION(Category = "Tango|Area Learning", BlueprintCallable, meta = (ToolTip = "Save area description file to this device's Tango Core internal ADF repository.", keyword = "ADF, area, learning, description, save, current"))
-		FTangoAreaDescription SaveCurrentArea(FString Filename, bool& bIsSuccessful);
-
+	
+	UFUNCTION(BlueprintCallable, Category = "Tango|Area Learning", meta = (Latent, WorldContext = "WorldContextObject", LatentInfo = "LatentInfo", Keywords = "ADF, area, learning, description, save, current"))
+		static void	SaveCurrentArea(UObject* WorldContextObject, const FString& Filename, struct FLatentActionInfo LatentInfo, FTangoAreaDescription& Result, bool& bSuccessful);
 	/*
 	*	This function is used to expose the metadata contained within a specified ADF.
 	*	This metadata includes the position and time that the ADF was created, and the Filename of the ADF.

@@ -17,6 +17,13 @@ limitations under the License.*/
 #include "TangoDevice.h"
 #include "stdlib.h"
 
+void FSaveAreaDescriptionAction::Run()
+{
+	auto* Ptr = UTangoDevice::Get().GetTangoDeviceAreaLearningPointer();
+	Result = Ptr->SaveCurrentArea(Filename, bIsSuccessful);
+	PercentDone = 1.0f;
+}
+
 //Required includes for making the calls to Java functions
 #if PLATFORM_ANDROID
 #include "Android/AndroidJNI.h"
@@ -63,7 +70,7 @@ FTangoAreaDescription TangoDeviceAreaLearning::SaveCurrentArea(FString Filename,
 	{
 		UE_LOG(TangoPlugin, Warning, TEXT(" TangoDeviceAreaLearning::SaveCurrentArea: Attempted to save area description when tracking was not enabled!"));
 	}
-	else if (!UTangoDevice::Get().GetTangoDeviceMotionPointer()->IsLocalized())
+	else if (!UTangoDevice::Get().GetTangoDeviceMotionPointer()->IsLocalized(true))
 	{
 		UE_LOG(TangoPlugin, Warning, TEXT(" TangoDeviceAreaLearning::SaveCurrentArea: Attempted to save area description when not localized yet!"));
 	}

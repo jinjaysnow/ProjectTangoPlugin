@@ -73,15 +73,29 @@ void UTangoMotionComponent::ResetMotionTracking()
 		UTangoDevice::Get().GetTangoDeviceMotionPointer()->ResetMotionTracking();
 }
 
+
+bool UTangoMotionComponent::IsCurrentlyTracking()
+{
+	if (UTangoDevice::Get().GetTangoDeviceMotionPointer())
+	{
+		return UTangoDevice::Get().GetTangoDeviceMotionPointer()->IsLocalized(false);
+	}
+	else
+	{
+		//UE_LOG(TangoPlugin, Warning, TEXT("UTangoMotionComponent::IsLocalized: Tango Motion tracking not enabled"));
+		return false;
+	}
+}
+
 bool UTangoMotionComponent::IsLocalized()
 {
 	if (UTangoDevice::Get().GetTangoDeviceMotionPointer())
 	{
-		return UTangoDevice::Get().GetTangoDeviceMotionPointer()->IsLocalized();
+		return UTangoDevice::Get().GetTangoDeviceMotionPointer()->IsLocalized(true);
 	}
 	else
 	{
-		UE_LOG(TangoPlugin, Warning, TEXT("UTangoMotionComponent::IsLocalized: Tango Motion tracking not enabled"));
+		//UE_LOG(TangoPlugin, Warning, TEXT("UTangoMotionComponent::IsLocalized: Tango Motion tracking not enabled"));
 		return false;
 	}
 }
@@ -103,7 +117,7 @@ void UTangoMotionComponent::TickComponent(float DeltaTime, enum ELevelTick TickT
 	else
 	{
 #if PLATFORM_ANDROID
-		UE_LOG(TangoPlugin, Warning, TEXT("UTangoMotionComponent::LateUpdate: Could not update transfrom because Tango Service is not connect or has motion tracking disabled!"));
+		//UE_LOG(TangoPlugin, Warning, TEXT("UTangoMotionComponent::LateUpdate: Could not update transfrom because Tango Service is not connect or has motion tracking disabled!"));
 #endif
 	}
 
