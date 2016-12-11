@@ -78,6 +78,19 @@ private:
 
 	bool bNewDataAvailable;
 public:
+	
 	bool IsNewDataAvail();
 	void DataSet(double Stamp) { bNewDataAvailable = false; bTexturesHaveDataInThem = true; ImageBufferTimestamp = Stamp; }
+	// hack: workarounds for bugs in TangoService_Experimental_connectTextureIdUnity
+	bool bNeedsAllocation;
+	uint32 YOpenGLPointer;
+	uint32 CrOpenGLPointer;
+	uint32 CbOpenGLPointer;
+	TArray<uint8> Buffer;
+	FCriticalSection BufferLock;
+#if PLATFORM_ANDROID
+	TangoImageBuffer TangoBuffer;
+	void RenderImageBuffer();
+	void CopyImageBuffer(const TangoImageBuffer* Buffer);
+#endif
 };

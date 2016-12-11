@@ -387,7 +387,7 @@ struct TANGOPLUGIN_API FTangoPoseData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "Pose time in seconds since the device was started"))
 		float Timestamp;
 
-	FTangoPoseData(FVector NewPosition = FVector(), FRotator NewRotation = FRotator(), FQuat NewQuatRotation = FQuat(), FTangoCoordinateFramePair NewFrameOfReference = FTangoCoordinateFramePair(),
+	FTangoPoseData(FVector NewPosition = FVector(), FRotator NewRotation = FRotator(), FQuat NewQuatRotation = FQuat::Identity, FTangoCoordinateFramePair NewFrameOfReference = FTangoCoordinateFramePair(),
 		ETangoPoseStatus NewStatusCode = ETangoPoseStatus::UNKNOWN, float NewTimestamp = 0.0f);
 };
 

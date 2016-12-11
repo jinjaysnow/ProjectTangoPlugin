@@ -114,7 +114,7 @@ void UTangoARCamera::TickComponent(float DeltaTime, enum ELevelTick TickType, FA
 		}
 		else
 		{
-			UE_LOG(TangoPlugin, Warning, TEXT("Camera pose not valid: %d, frame of reference: %d, %d"), (int32)LatestPose.StatusCode, (int32)FrameOfReference.BaseFrame, (int32)FrameOfReference.TargetFrame);
+			//UE_LOG(TangoPlugin, Warning, TEXT("Camera pose not valid: %d, frame of reference: %d, %d"), (int32)LatestPose.StatusCode, (int32)FrameOfReference.BaseFrame, (int32)FrameOfReference.TargetFrame);
 		}
 	}
 	else

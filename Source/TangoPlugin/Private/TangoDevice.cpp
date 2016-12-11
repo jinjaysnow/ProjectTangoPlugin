@@ -199,6 +199,7 @@ void UTangoDevice::DeallocateResources()
 	AreaHelper = nullptr;
 	YTexture = nullptr;
 	CbTexture = nullptr;
+	CrTexture = nullptr;
 	bDataIsFilled = false;
 }
 
@@ -741,7 +742,7 @@ void UTangoDevice::AppServiceResume()
 void UTangoDevice::AppServicePause()
 {
 	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::AppServicePause: Called"));
-	if (false && IsTangoServiceRunning()) // temporary hack: motion tracking doesn't recover in resume in Tango Z-release
+	if (IsTangoServiceRunning()) 
 	{
 		DeallocateResources();
 		DisconnectTangoService(true);
