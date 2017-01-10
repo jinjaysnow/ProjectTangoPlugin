@@ -17,7 +17,7 @@ limitations under the License.*/
 #include "TangoDeviceMotion.h"
 #include "TangoFromToCObject.h"
 #include "TangoCoordinateConversions.h"
-
+#include "TangoARHelpers.h"
 #include "TangoDevice.h"
 
 #if PLATFORM_ANDROID
@@ -140,7 +140,7 @@ FWGS_84_PoseData UTangoDeviceMotion::GetWGS_84_PoseAtTime(const ETangoCoordinate
 FTangoPoseData UTangoDeviceMotion::GetPoseAtTime(FTangoCoordinateFramePair FrameOfReference, float Timestamp)
 {
     //Prevent Tango calls before the system is ready, return null data instead
-    if(!(UTangoDevice::Get().IsTangoServiceRunning()))
+    if(!(UTangoDevice::Get().IsTangoServiceRunning()) || !TangoARHelpers::DataIsReady())
     {
         return FTangoPoseData();
     }

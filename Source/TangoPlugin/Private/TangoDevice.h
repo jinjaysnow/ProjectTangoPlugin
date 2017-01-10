@@ -224,7 +224,7 @@ public:
 	{
 		float WidthRatio = (float)ViewPortSize.X / (float)ColorCameraIntrinsics.Width;
 		float HeightRatio = (float)ViewPortSize.Y / (float)ColorCameraIntrinsics.Height;
-
+		UE_LOG(TangoPlugin, Log, TEXT("FTangoViewExtension::GetNearProjectionPlane: Viewport: %d %d, Camera: %d %d"), ViewPortSize.X, ViewPortSize.Y, ColorCameraIntrinsics.Width, ColorCameraIntrinsics.Height);
 		float UOffset, VOffset;
 		if (WidthRatio >= HeightRatio)
 		{
@@ -239,8 +239,6 @@ public:
 		UVShift.X = UOffset;
 		UVShift.Y = VOffset;
 		UE_LOG(TangoPlugin, Log, TEXT("FTangoViewExtension::GetNearProjectionPlane: UVShift: %f %f"), UOffset, VOffset);
-		UOffset = 0.05f;
-		VOffset = 0.0f;
 
 		float XScale = NearFarDistance.X / ColorCameraIntrinsics.Fx;
 		float YScale = NearFarDistance.X / ColorCameraIntrinsics.Fy;

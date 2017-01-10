@@ -33,6 +33,7 @@ void UTangoDeviceImage::Init(
 	bTexturesHaveDataInThem = false;
 	bNewDataAvailable = false;
 	bNeedsAllocation = true;
+	bUseImageBufferCallback = true;
 	YOpenGLPointer = 0;
 	CrOpenGLPointer = 0;
 	CbOpenGLPointer = 0;
@@ -237,25 +238,38 @@ void UTangoDeviceImage::CheckConnectCallback()
 			if (*StateRef == CONNECTSHEDULED)
 			{
 				*StateRef = CONNECTED;
-			
-				//TangoErrorType Status = TangoService_Experimental_connectTextureIdUnity(TANGO_CAMERA_COLOR, UTangoDevice::Get().GetTangoDeviceImagePointer()->YOpenGLPointer, UTangoDevice::Get().GetTangoDeviceImagePointer()->CbOpenGLPointer, UTangoDevice::Get().GetTangoDeviceImagePointer()->CrOpenGLPointer, this,
-					//[](void*, TangoCameraId id) {if (id == TANGO_CAMERA_COLOR && UTangoDevice::Get().GetTangoDeviceImagePointer() != nullptr) UTangoDevice::Get().GetTangoDeviceImagePointer()->OnNewDataAvailable(); }
-				//);
-				TangoErrorType Status = TangoService_connectOnFrameAvailable(TANGO_CAMERA_COLOR, nullptr, 
-					[](void*, TangoCameraId id, const TangoImageBuffer* buffer) {
-					if (id == TANGO_CAMERA_COLOR && UTangoDevice::Get().GetTangoDeviceImagePointer() != nullptr)
+				if (!UTangoDevice::Get().GetTangoDeviceImagePointer()->bUseImageBufferCallback)
+				{
+					TangoErrorType Status = TangoService_Experimental_connectTextureIdUnity(TANGO_CAMERA_COLOR, UTangoDevice::Get().GetTangoDeviceImagePointer()->YOpenGLPointer, UTangoDevice::Get().GetTangoDeviceImagePointer()->CbOpenGLPointer, UTangoDevice::Get().GetTangoDeviceImagePointer()->CrOpenGLPointer, this,
+						[](void*, TangoCameraId id) {if (id == TANGO_CAMERA_COLOR && UTangoDevice::Get().GetTangoDeviceImagePointer() != nullptr) UTangoDevice::Get().GetTangoDeviceImagePointer()->OnNewDataAvailable(); }
+					);
+					if (Status != TANGO_SUCCESS)
 					{
-						UTangoDevice::Get().GetTangoDeviceImagePointer()->CopyImageBuffer(buffer);
+						UE_LOG(TangoPlugin, Error, TEXT("UTangoDeviceImage::connectTextureIdUnity failed"));
 					}
-				});
-				if (Status != TANGO_SUCCESS)
-				{
-					UE_LOG(TangoPlugin, Error, TEXT("UTangoDeviceImage::connectFrameAvailable failed"));
+					else
+					{
+						UE_LOG(TangoPlugin, Log, TEXT("UTangoDeviceImage:: registered texture id  callback"));
+					}
 				}
-				else
+			    else
 				{
-					UE_LOG(TangoPlugin, Log, TEXT("UTangoDeviceImage:: registered frame available callback"));
-				}
+				   TangoErrorType Status = TangoService_connectOnFrameAvailable(TANGO_CAMERA_COLOR, nullptr, 
+					   [](void*, TangoCameraId id, const TangoImageBuffer* buffer) {
+					   if (id == TANGO_CAMERA_COLOR && UTangoDevice::Get().GetTangoDeviceImagePointer() != nullptr)
+					   {
+						   UTangoDevice::Get().GetTangoDeviceImagePointer()->CopyImageBuffer(buffer);
+					   }
+				   });
+					if (Status != TANGO_SUCCESS)
+					{
+						UE_LOG(TangoPlugin, Error, TEXT("UTangoDeviceImage::connectFrameAvailable failed"));
+					}
+					else
+					{
+						UE_LOG(TangoPlugin, Log, TEXT("UTangoDeviceImage:: registered frame available callback"));
+					}
+				}	
 			}
 		});
 #endif
@@ -266,42 +280,49 @@ void UTangoDeviceImage::CheckConnectCallback()
 void UTangoDeviceImage::CopyImageBuffer(const TangoImageBuffer* InBuffer)
 {
 	FScopeLock ScopeLock(&BufferLock);
-	TangoBuffer = *InBuffer;
-	uint32 Size = InBuffer->height * InBuffer->width + InBuffer->height * InBuffer->width / 2;
-	Buffer.Reset(Size);
-	Buffer.Append(InBuffer->data, Size);
-	TangoBuffer.data = Buffer.GetData();
-	ImageBufferTimestamp = InBuffer->timestamp;
-	OnNewDataAvailable();
+	if (bUseImageBufferCallback)
+	{
+		TangoBuffer = *InBuffer;
+		uint32 Size = InBuffer->height * InBuffer->width + (InBuffer->height * InBuffer->width) / 2;
+		Buffer.Reset(Size);
+		Buffer.Append(InBuffer->data, Size);
+		TangoBuffer.data = Buffer.GetData();
+		ImageBufferTimestamp = InBuffer->timestamp;
+		OnNewDataAvailable();
+	}
 }
 
 void UTangoDeviceImage::RenderImageBuffer()
 {
 	FScopeLock ScopeLock(&BufferLock);
-	const uint32 stride = TangoBuffer.stride;
-	const uint32 height = TangoBuffer.height;
-	const uint32 y_width = stride / 4;
-	const uint32 y_height = height;
-	const uint32 uv_width = stride / 4;
-	const uint32 uv_height = height / 2;
-	const uint32 uv_offset = stride * height;
-	if (bNeedsAllocation)
+	if (bUseImageBufferCallback)
 	{
-		UE_LOG(TangoPlugin, Log, TEXT("UTangoDeviceImage: Allocating textures %d, %d, %d, height=%d"), YOpenGLPointer, CrOpenGLPointer, CbOpenGLPointer, height);
-		bNeedsAllocation = false;
+		const uint32 stride = TangoBuffer.stride;
+		const uint32 height = TangoBuffer.height;
+		const uint32 width = TangoBuffer.width;
+		const uint32 y_width = stride / 4;
+		const uint32 y_height = height;
+		const uint32 uv_width = stride / 4;
+		const uint32 uv_height = height / 2;
+		const uint32 uv_offset = stride * height;
+		if (bNeedsAllocation)
+		{
+			UE_LOG(TangoPlugin, Log, TEXT("UTangoDeviceImage: Allocating textures stride=%d, width=%d, height=%d"), stride, width, height);
+			bNeedsAllocation = false;
+			glBindTexture(GL_TEXTURE_2D, YOpenGLPointer);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, y_width, y_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+			glBindTexture(GL_TEXTURE_2D, CrOpenGLPointer);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, uv_width, uv_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+			glBindTexture(GL_TEXTURE_2D, CbOpenGLPointer);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, uv_width, uv_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		}
 		glBindTexture(GL_TEXTURE_2D, YOpenGLPointer);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, y_width, y_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, y_width, y_height, GL_RGBA, GL_UNSIGNED_BYTE, TangoBuffer.data);
 		glBindTexture(GL_TEXTURE_2D, CrOpenGLPointer);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, uv_width, uv_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, uv_width, uv_height, GL_RGBA, GL_UNSIGNED_BYTE, TangoBuffer.data + uv_offset);
 		glBindTexture(GL_TEXTURE_2D, CbOpenGLPointer);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, uv_width, uv_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, uv_width, uv_height, GL_RGBA, GL_UNSIGNED_BYTE, TangoBuffer.data + uv_offset);
 	}
-	glBindTexture(GL_TEXTURE_2D, YOpenGLPointer);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, y_width, y_height, GL_RGBA, GL_UNSIGNED_BYTE, TangoBuffer.data);
-	glBindTexture(GL_TEXTURE_2D, CrOpenGLPointer);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, uv_width, uv_height, GL_RGBA, GL_UNSIGNED_BYTE, TangoBuffer.data + uv_offset);
-	glBindTexture(GL_TEXTURE_2D, CbOpenGLPointer);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, uv_width, uv_height, GL_RGBA, GL_UNSIGNED_BYTE, TangoBuffer.data + uv_offset);
 }
 
 #endif
@@ -321,7 +342,7 @@ void UTangoDeviceImage::TickByDevice()
 	if (IsNewDataAvail())
 	{
 		double Stamp = 0.0;
-		if (false)
+		if (!bUseImageBufferCallback)
 		{
 			if (TangoService_updateTexture(TANGO_CAMERA_COLOR, &Stamp) != TANGO_SUCCESS)
 			{
@@ -332,8 +353,11 @@ void UTangoDeviceImage::TickByDevice()
 				DataSet(Stamp);
 			}
 		}
-		RenderImageBuffer();
-		DataSet(ImageBufferTimestamp);
+		else
+		{
+			RenderImageBuffer();
+			DataSet(ImageBufferTimestamp);
+        }
 	}
 	CheckConnectCallback();
 #endif

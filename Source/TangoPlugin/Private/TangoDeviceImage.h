@@ -88,6 +88,7 @@ public:
 	uint32 CbOpenGLPointer;
 	TArray<uint8> Buffer;
 	FCriticalSection BufferLock;
+	bool bUseImageBufferCallback;
 #if PLATFORM_ANDROID
 	TangoImageBuffer TangoBuffer;
 	void RenderImageBuffer();

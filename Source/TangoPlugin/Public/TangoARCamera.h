@@ -32,7 +32,6 @@ public:
 public:
 	virtual AActor* GetActor() override;
 	virtual USceneComponent* AsSceneComponent() override;
-	virtual FTransform CalcComponentToWorld(FTransform Transform) override;
 protected:
 	virtual void BeginPlay() override;
 	virtual void InitializeComponent() override;

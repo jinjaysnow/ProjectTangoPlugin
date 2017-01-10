@@ -37,9 +37,14 @@ static TangoCoordinateFramePair ToCObject(FTangoCoordinateFramePair ToConvert)
 static FTangoPoseData FromCPointer(const TangoPoseData* ToConvert)
 {
 	FTangoPoseData Result;
-	Result.Position = FVector(ToConvert->translation[0], ToConvert->translation[1], ToConvert->translation[2]);
-	Result.Rotation = FRotator(FQuat(ToConvert->orientation[0], ToConvert->orientation[1], ToConvert->orientation[2], ToConvert->orientation[3]));
+	Result.Position = FVector(ToConvert->translation[0], ToConvert->translation[1], ToConvert->translation[2]);	
 	Result.QuatRotation = FQuat(ToConvert->orientation[0], ToConvert->orientation[1], ToConvert->orientation[2], ToConvert->orientation[3]);
+	if (FMath::IsNearlyZero(Result.QuatRotation.Size()))
+	{
+		Result.StatusCode = ETangoPoseStatus::INVALID;
+		return Result;
+	}
+	Result.Rotation = FRotator(Result.QuatRotation);
 	Result.FrameOfReference = FromCObject(ToConvert->frame);
 	Result.Timestamp = ToConvert->timestamp;
 	Result.StatusCode = (ETangoPoseStatus)ToConvert->status_code;
