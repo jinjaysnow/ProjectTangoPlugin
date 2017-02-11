@@ -32,6 +32,9 @@ public:
 public:
 	virtual AActor* GetActor() override;
 	virtual USceneComponent* AsSceneComponent() override;
+	/** Whether the camera preview is shown */
+	UPROPERTY(BlueprintReadWrite, Category = "Tango|Camera")
+		bool bScreenIsVisible;
 protected:
 	virtual void BeginPlay() override;
 	virtual void InitializeComponent() override;

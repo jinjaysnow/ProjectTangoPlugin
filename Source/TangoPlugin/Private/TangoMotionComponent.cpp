@@ -57,7 +57,7 @@ FTangoPoseData UTangoMotionComponent::GetTangoPoseAtTime(FTangoCoordinateFramePa
 FTransform UTangoMotionComponent::GetComponentTransformAtTime(float Timestamp)
 {
 	auto Pose = GetTangoPoseAtTime(MotionComponentFrameOfReference, Timestamp);
-	return CalcNewComponentToWorld(FTransform(Pose.QuatRotation, Pose.Position,RelativeScale3D));
+	return CalcNewComponentToWorld(FTransform(Pose.QuatRotation, Pose.Position, RelativeScale3D));
 }
 
 ETangoPoseStatus UTangoMotionComponent::GetTangoPoseStatus(float& Timestamp)
@@ -103,24 +103,6 @@ bool UTangoMotionComponent::IsLocalized()
 void UTangoMotionComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	if (UTangoDevice::Get().GetTangoDeviceMotionPointer())
-	{
-		FTangoPoseData LatestPose = UTangoDevice::Get().GetTangoDeviceMotionPointer()->GetPoseAtTime(MotionComponentFrameOfReference, 0);
-		//Only move the component if the pose status is valid.
-		if (LatestPose.StatusCode == ETangoPoseStatus::VALID)
-		{
-			SetRelativeLocation(LatestPose.Position);
-			SetRelativeRotation(FRotator(LatestPose.QuatRotation));
-		}
-	}
-	else
-	{
-#if PLATFORM_ANDROID
-		//UE_LOG(TangoPlugin, Warning, TEXT("UTangoMotionComponent::LateUpdate: Could not update transfrom because Tango Service is not connect or has motion tracking disabled!"));
-#endif
-	}
-
 }
 
 

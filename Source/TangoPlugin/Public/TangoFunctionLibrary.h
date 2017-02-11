@@ -89,6 +89,9 @@ public:
 	UFUNCTION(Category = "Tango|Core", BlueprintPure, meta = (ToolTip = "Get the name of the currently loaded area description", Keywords = "tango, adf, area description, get, device"))
 		static FTangoAreaDescription GetLoadedAreaDescription();
 
+	UFUNCTION(Category = "Tango|Core", BlueprintPure, meta = (ToolTip = "Get content of the specified area description", Keywords = "tango, adf, area description, get, device"))
+		static void GetBinaryAreaDescription(const FTangoAreaDescription& AreaDescription, TArray<uint8>& Result, bool& bSuccess);
+
 	/*
 	*	Returns a structure containing information about the nature of the selected camera. This is useful for many Augmented Reality and camera alignment calculations.
 	* @param CameraID an enumeration which denotes which camera's intrinsics information should be returned in the output FTangoCameraIntrinsics struct.

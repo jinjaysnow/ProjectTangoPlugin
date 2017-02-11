@@ -23,26 +23,6 @@ limitations under the License.*/
 #if PLATFORM_ANDROID
 #include "Android/AndroidJNI.h"
 #include "AndroidApplication.h"
-
-
-/** Static function called by the Tango Library with depth cloud point data.
-*/
-void TangoDevicePointCloud::OnXYZijAvailable(const TangoXYZij* XYZ_ij)
-{
-	if (XYZ_ij->xyz_count <= VertCapacity)
-	{
-		FScopeLock ScopeLock(&XYZIJLock);
-		if (RawDataB != nullptr && XYZ_ij->xyz != nullptr)
-		{
-			memcpy(IJDataB, XYZ_ij->ij, sizeof(uint32_t) * XYZ_ij->ij_cols * XYZ_ij->ij_rows);
-			memcpy(RawDataB, XYZ_ij->xyz, sizeof(float) * 3 * VertCount);
-			NewDataTimeStamp = XYZ_ij->timestamp;
-			VertCount = XYZ_ij->xyz_count;
-			ColumnCount = XYZ_ij->ij_cols;
-			RowCount = XYZ_ij->ij_rows;
-		}
-	}
-}
 #endif
 
 int32 TangoDevicePointCloud::GetMaxVertexCapacity()
@@ -50,62 +30,24 @@ int32 TangoDevicePointCloud::GetMaxVertexCapacity()
 	return VertCapacity;
 }
 
-TArray<FVector>& TangoDevicePointCloud::GetPointCloud()
-{
-	return PointCloudValues;
-}
 
-float TangoDevicePointCloud::GetPointCloudTimestamp()
-{
-	return TimeStamp;
-}
 void TangoDevicePointCloud::TickByDevice()
 {
 #if PLATFORM_ANDROID
 
-	bool bIsNewDataAvailable = false;
-	int Count = 0;
-
-	if (TimeStamp != NewDataTimeStamp)
+	for (int i = 0; i < UTangoDevice::Get().PointCloudComponents.Num(); ++i)
 	{
-		FScopeLock ScopeLock(&XYZIJLock);
-		TimeStamp = NewDataTimeStamp;
-		bIsNewDataAvailable = true;
-		Count = VertCount;
-		//Swap buffers
-		float(*temp)[3] = RawData;
-		RawData = RawDataB;
-		RawDataB = temp;
-
-		int32* ITemp = IJDataA;
-		IJDataA = IJDataB;
-		IJDataB = ITemp;
-
-	}
-
-	if (bIsNewDataAvailable)
-	{
-		float WorldScale = UTangoDevice::Get().GetMetersToWorldScale();
-		PointCloudValues.SetNum(Count, false);
-		for (int i = 0; i < Count; ++i)
+		if (UTangoDevice::Get().PointCloudComponents[i] != nullptr)
 		{
-			PointCloudValues[i].X = RawData[i][2] * WorldScale;
-			PointCloudValues[i].Y = RawData[i][0] * WorldScale;
-			PointCloudValues[i].Z = -RawData[i][1] * WorldScale;
+
 		}
-		for (int i = 0; i < UTangoDevice::Get().PointCloudComponents.Num(); ++i)
+		else
 		{
-			if (UTangoDevice::Get().PointCloudComponents[i] != nullptr)
-			{
-				UTangoDevice::Get().PointCloudComponents[i]->OnTangoXYZijAvailable.Broadcast(TimeStamp);
-			}
-			else
-			{
-				UTangoDevice::Get().PointCloudComponents.RemoveAt(i);
-				i--;
-			}
+			UTangoDevice::Get().PointCloudComponents.RemoveAt(i);
+			i--;
 		}
 	}
+
 #endif
 }
 
@@ -117,30 +59,35 @@ TangoDevicePointCloud::TangoDevicePointCloud(
 {
 	UE_LOG(TangoPlugin, Log, TEXT("TangoDevicePointCloud::TangoDevicePointCloud: Creating TangoDevicePointCloud!"));
 	//Setting up Point Cloud Buffers
-	TimeStamp = 0;
+	
 #if PLATFORM_ANDROID
 
-	NewDataTimeStamp = 0;
+	
 	int MaxPointCloudElements = 0;
 	bool bSuccess = TangoConfig_getInt32(Config_, "max_point_cloud_elements", &MaxPointCloudElements) == TANGO_SUCCESS;
 	uint32_t MaxPointCloudVertexCount = static_cast<uint32_t>(MaxPointCloudElements);
-
+	point_cloud_manager_ = nullptr;
 	if (bSuccess)
 	{
-		UE_LOG(TangoPlugin, Log, TEXT("TangoDevicePointCloud::TangoDevicePointCloud: allocations. Max point count: %d"),MaxPointCloudVertexCount);
-		FScopeLock ScopeLock(&XYZIJLock);
-		VertCount = 0;
-		VertCapacity = MaxPointCloudVertexCount;
-		PointCloudValues.Reserve(static_cast<int32_t>(MaxPointCloudElements));
-
-		RawData = new float[MaxPointCloudVertexCount][3];
-		RawDataB = new float[MaxPointCloudVertexCount][3];
-
-		IJDataA = new int32[MaxPointCloudVertexCount];
-		IJDataB = new int32[MaxPointCloudVertexCount];
-
-		ColumnCount = 0;
-		RowCount = 0;
+		// Initialize TangoSupport context.
+		static bool isTangoSupportInit = false;
+		if (!isTangoSupportInit)
+		{
+			isTangoSupportInit = true;
+			TangoSupport_initializeLibrary();
+		}
+		{
+			int32 ret = TangoSupport_createPointCloudManager(MaxPointCloudElements,
+				&point_cloud_manager_);
+			if (ret != TANGO_SUCCESS)
+			{
+				UE_LOG(TangoPlugin, Error, TEXT("createPointCloudManager failed with error code: %d"), ret);
+			}
+			else
+			{
+				UE_LOG(TangoPlugin, Log, TEXT("createPointCloudManager %p"), point_cloud_manager_);
+			}
+		}
 	}
 	else
 	{
@@ -155,34 +102,130 @@ void TangoDevicePointCloud::ConnectCallback()
 {
 	UE_LOG(TangoPlugin, Log, TEXT("TangoDevicePointCloud::ConnectCallback: RegisterCallBack!"));
 #if PLATFORM_ANDROID
-	TangoService_connectOnXYZijAvailable([](void*, const TangoXYZij* XYZ_ij) {UTangoDevice::Get().GetTangoDevicePointCloudPointer()->OnXYZijAvailable(XYZ_ij); });
+	//TangoService_connectOnXYZijAvailable([](void*, const TangoXYZij* XYZ_ij) {UTangoDevice::Get().GetTangoDevicePointCloudPointer()->OnXYZijAvailable(XYZ_ij); });
+	TangoErrorType ret =
+		TangoService_connectOnPointCloudAvailable([](void*, const TangoPointCloud* PointCloud) -> void
+	{
+		TangoDevicePointCloud* DevicePointCloud = UTangoDevice::Get().GetTangoDevicePointCloudPointer();
+		if (DevicePointCloud != nullptr) DevicePointCloud->HandleOnPointCloudAvailable(PointCloud);
+	});
 #endif
 }
 
 TangoDevicePointCloud::~TangoDevicePointCloud()
 {
 #if PLATFORM_ANDROID
-	FScopeLock ScopeLock(&XYZIJLock);
-	delete[] RawData;
-	delete[] RawDataB;
-	delete[] IJDataA;
-	delete[] IJDataB;
-	RawData = nullptr;
-	RawDataB = nullptr;
-	IJDataA = nullptr;
-	IJDataB = nullptr;
+	FScopeLock ScopeLock(GetPointCloudLock());
+	if (point_cloud_manager_ != nullptr)
+	{
+		TangoSupport_freePointCloudManager(point_cloud_manager_);
+	}
 #endif
 }
 
-int32 * TangoDevicePointCloud::GetIJData(uint32 & _RowCount, uint32 & ColCount)
-{
+
 #if PLATFORM_ANDROID
-	_RowCount = RowCount;
-	ColCount = ColumnCount;
-	return IJDataA;
-#else
-	_RowCount = 0;
-	ColCount = 0;
-	return nullptr;
-#endif
+
+const TangoPointCloud* TangoDevicePointCloud::GetLatestPointCloud()
+{
+	TangoPointCloud* point_cloud = nullptr;
+	if (point_cloud_manager_ != nullptr)
+	{
+		if (TangoSupport_getLatestPointCloud(point_cloud_manager_, &point_cloud) != TANGO_SUCCESS)
+		{
+			return nullptr;
+		}
+		UE_LOG(TangoPlugin, Log, TEXT("Got Latest Point Cloud %p: %d"), point_cloud, (point_cloud ? point_cloud->num_points : 0));
+	}
+	return point_cloud;
 }
+
+void TangoDevicePointCloud::HandleOnPointCloudAvailable(const TangoPointCloud* PointCloud)
+{
+	FScopeLock ScopeLock(GetPointCloudLock());
+	if (point_cloud_manager_ != nullptr)
+	{
+		//UE_LOG(TangoPlugin, Log, TEXT("Updating Point Cloud %p"), PointCloud);
+		TangoSupport_updatePointCloud(point_cloud_manager_, PointCloud);
+		//UE_LOG(TangoPlugin, Log, TEXT("Updating Point Cloud latest => %p"), GetLatestPointCloud());
+	}
+	OnPointCloudAvailable.Broadcast(PointCloud);
+}
+
+
+bool TangoDevicePointCloud::FitPlane(float X, float Y, FTransform& Result)
+{
+	// Get the latest point cloud
+	FScopeLock ScopeLock(GetPointCloudLock());
+	const TangoPointCloud* point_cloud = GetLatestPointCloud();
+	if (point_cloud == nullptr)
+	{
+		UE_LOG(TangoPlugin, Log, TEXT("%s: No point cloud available yet"));
+		return false;
+	}
+	/// Calculate the conversion from the latest depth camera position to the
+	/// position of the most recent color camera image. This corrects for screen
+	/// lag between the two systems.
+	TangoPoseData pose_color_camera_t0_T_depth_camera_t1;
+	double camera_time_stamp = UTangoDevice::Get().GetTangoDeviceImagePointer()->GetLastTimestamp();
+	int ret = TangoSupport_calculateRelativePose(
+		camera_time_stamp, TANGO_COORDINATE_FRAME_CAMERA_COLOR,
+		point_cloud->timestamp, TANGO_COORDINATE_FRAME_CAMERA_DEPTH,
+		&pose_color_camera_t0_T_depth_camera_t1);
+	if (ret != TANGO_SUCCESS)
+	{
+		UE_LOG(TangoPlugin, Error, TEXT("could not calculate relative pose"));
+		return false;
+	}
+	UE_LOG(TangoPlugin, Log, TEXT("timestamps: camera: %f, point cloud: %f"), camera_time_stamp, point_cloud->timestamp);
+	float uv[2] = { X, Y };
+	double double_depth_position[3];
+	double double_depth_plane_equation[4];
+	if (TangoSupport_fitPlaneModelNearPoint(
+		point_cloud, &pose_color_camera_t0_T_depth_camera_t1,
+		uv, double_depth_position,
+		double_depth_plane_equation) != TANGO_SUCCESS)
+	{
+		return false;
+	}
+
+	// Convert to UE conventions
+	float Forward = (float)double_depth_position[2];
+	float Right = (float)double_depth_position[0];
+	float Up = -(float)double_depth_position[1];
+
+	FVector DepthPosition(Forward, Right, Up);
+	DepthPosition *= 100; // m to cm
+
+	Forward = (float)double_depth_plane_equation[2];
+	Right = (float)double_depth_plane_equation[0];
+	Up = -(float)double_depth_plane_equation[1];
+
+	FPlane DepthPlane(
+		Forward, Right, Up,
+		-(float)double_depth_plane_equation[3]
+	);
+
+	FTangoPoseData Data = UTangoDevice::Get().GetTangoDeviceMotionPointer()->
+		GetPoseAtTime(FTangoCoordinateFramePair(ETangoCoordinateFrameType::AREA_DESCRIPTION,
+			ETangoCoordinateFrameType::CAMERA_DEPTH), point_cloud->timestamp);
+
+	const FTransform Transform(Data.Rotation, Data.Position);
+	const FMatrix Matrix = Transform.ToMatrixNoScale();
+	FVector WorldForward = DepthPlane.TransformBy(Matrix);
+	FVector WorldPoint = Matrix.TransformPosition(DepthPosition);
+	//UE_LOG(TangoPlugin, Log, TEXT("Fit plane World Point: %s"), *WorldPoint.ToString());
+	FVector WorldUp(0, 0, 1);
+	if ((WorldForward|WorldUp) > 0.5f)
+	{
+		WorldUp = FVector(1, 0, 0);
+	}
+	FVector WorldRight = WorldForward^WorldUp;
+	WorldRight.Normalize();
+	WorldUp = WorldForward^WorldRight;
+	WorldUp.Normalize();
+	Result = FTransform(WorldForward, WorldRight, WorldUp, WorldPoint);
+	return true;
+}
+
+#endif

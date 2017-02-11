@@ -15,9 +15,10 @@ limitations under the License.*/
 #pragma once
 
 #include "Object.h"
-
 #if PLATFORM_ANDROID
 #include "tango_client_api.h"
+#include "tango_support_api.h"
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnPointCloudAvailable, const TangoPointCloud*);
 #endif
 
 class TangoDevicePointCloud
@@ -25,10 +26,10 @@ class TangoDevicePointCloud
 	
 public:
 	int32 GetMaxVertexCapacity();
-	TArray<FVector>& GetPointCloud();
-	float GetPointCloudTimestamp();
 	void TickByDevice();
-
+#if PLATFORM_ANDROID
+	FOnPointCloudAvailable OnPointCloudAvailable;
+#endif
 	TangoDevicePointCloud(
 #if PLATFORM_ANDROID
 		TangoConfig Config_
@@ -37,33 +38,23 @@ public:
 	void ConnectCallback();
 	~TangoDevicePointCloud();
 	
-	int32* GetIJData(uint32& _RowCount, uint32& ColCount);
 
-private:
-#if PLATFORM_ANDROID
-	void OnXYZijAvailable(const TangoXYZij* XYZ_ij);
+#if PLATFORM_ANDROID	
+	FCriticalSection* GetPointCloudLock()
+	{
+		return &PointCloudMutex;
+	}
+	const TangoPointCloud* GetLatestPointCloud();
+	bool FitPlane(float X, float Y, FTransform& Result);
+	
 #endif
-
-	//Mutex to lock the buffer when being swapped or when b side is written from Tango Thread
-	FCriticalSection XYZIJLock;
+	
+private:
 
 #if PLATFORM_ANDROID
-
-	//Of course only Reading is threadsafe from side A - side B should only be touched from the Tango Thread and by the swap.
-	//Raw Data
-	float(*RawData)[3];
-	float(*RawDataB)[3];
-	uint32_t VertCount;
-	double NewDataTimeStamp;
-
-	uint32 RowCount;
-	uint32 ColumnCount;
-	int32* IJDataA;
-	int32* IJDataB;
+	FCriticalSection PointCloudMutex;
+	TangoSupportPointCloudManager* point_cloud_manager_;
+	void HandleOnPointCloudAvailable(const TangoPointCloud* PointCloud);
 #endif
 	uint32_t VertCapacity;
-	//safe Data Timestamp
-	double TimeStamp;
-	//Depth Information
-	TArray<FVector> PointCloudValues;
 };

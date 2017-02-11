@@ -17,49 +17,54 @@ using System.IO;
 
 public class TangoPlugin : ModuleRules
 {
-	public TangoPlugin(TargetInfo Target)
-	{
-		//Add this modules headers, and the Tango API headers as public includes
-		PublicIncludePaths.AddRange(new string[] {
-            "TangoPlugin/Public",
-			Path.Combine(ModuleDirectory, "../../ThirdParty/Public")
-		});
+    public TangoPlugin(TargetInfo Target)
+    {
 
-		//Add this modules source code
-		PrivateIncludePaths.Add("TangoPlugin/Private");
+        PublicIncludePaths.Add("TangoPlugin/Public");
+        //Add this modules source code
+        PrivateIncludePaths.Add("TangoPlugin/Private");
 
-		//Specify what Unreal 4 Modules the plug-in is dependent on
-		PublicDependencyModuleNames.AddRange(new string[]
-		{
-				"Core",
-			"CoreUObject",
-			"Engine",
-			"RenderCore",
-			"ShaderCore",
-			"RHI"
-		}
-		
-			);
-		PrivateDependencyModuleNames.AddRange(new string[] {
-			"CoreUObject",
-			"Engine",
-			"RHI",
-			"RenderCore",
+        //Specify what Unreal 4 Modules the plug-in is dependent on
+        PublicDependencyModuleNames.AddRange(new string[]
+        {
+                "Core",
+            "CoreUObject",
+            "Engine",
+            "RenderCore",
+            "ShaderCore",
+            "RHI"
+        }
+
+            );
+        PrivateDependencyModuleNames.AddRange(new string[] {
+            "CoreUObject",
+            "Engine",
+            "RHI",
+            "RenderCore",
             "Core"
         });
 
-		//For adding settings to the Project Settings menu.
-		PrivateIncludePathModuleNames.Add("Settings");
+        //For adding settings to the Project Settings menu.
+        PrivateIncludePathModuleNames.Add("Settings");
 
-		//If we are building for android, specify extra rules for it to compile and run using the Tango API.
-		if (Target.Platform == UnrealTargetPlatform.Android)
-		{
-			PrivateDependencyModuleNames.Add("Launch");
-			AdditionalPropertiesForReceipt.Add(new ReceiptProperty("AndroidPlugin", Path.Combine(ModuleDirectory, "TangoPlugin_APL.xml")));
-            //@NOTE: is the include here now attempting to load the public library as well as the APL.xml include?
-            PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "../../ThirdParty/libtango_client_api.so"));
-
-            
-		}
-	}
+        //If we are building for android, specify extra rules for it to compile and run using the Tango API.
+        if (Target.Platform == UnrealTargetPlatform.Android)
+        {
+            PrivateDependencyModuleNames.Add("Launch");
+            AdditionalPropertiesForReceipt.Add(new ReceiptProperty("AndroidPlugin", Path.Combine(ModuleDirectory, "TangoPlugin_APL.xml")));
+            System.Console.WriteLine("android arch: "+Target.Architecture);
+            PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "../../ThirdParty", "tango_client_api", "include"));
+            PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "../../ThirdParty", "tango_support_api", "include"));
+            PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "../../ThirdParty", "tango_3d_reconstruction", "include"));
+            foreach (string ArchDir in new string[] { "armeabi-v7a", "x86", "arm64-v8a" })
+            {
+                PublicLibraryPaths.Add(Path.Combine(ModuleDirectory, "../../ThirdParty", "tango_client_api", "lib", ArchDir));
+                PublicLibraryPaths.Add(Path.Combine(ModuleDirectory, "../../ThirdParty", "tango_support_api", "lib", ArchDir));
+                PublicLibraryPaths.Add(Path.Combine(ModuleDirectory, "../../ThirdParty", "tango_3d_reconstruction", "lib", ArchDir));
+            }
+            PublicAdditionalLibraries.Add("tango_client_api");
+            PublicAdditionalLibraries.Add("tango_support_api");
+            PublicAdditionalLibraries.Add("tango_3d_reconstruction");
+        }
+    }
 }

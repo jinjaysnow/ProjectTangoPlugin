@@ -37,6 +37,9 @@ void UTangoDeviceMotion::ProperInitialize()
 #endif
 	CheckForChangeInRequests();
 	bIsProperlyInitialized = true;
+	LastTimestamp = 0;
+	Frame = 0;
+	LastFrame = 0;
 }
 
 void UTangoDeviceMotion::ConnectCallback()
@@ -139,11 +142,22 @@ FWGS_84_PoseData UTangoDeviceMotion::GetWGS_84_PoseAtTime(const ETangoCoordinate
 
 FTangoPoseData UTangoDeviceMotion::GetPoseAtTime(FTangoCoordinateFramePair FrameOfReference, float Timestamp)
 {
+	if (Frame == LastFrame && LastTimestamp == Timestamp &&
+		LastFrameOfReference.BaseFrame == FrameOfReference.BaseFrame && 
+		LastFrameOfReference.TargetFrame == FrameOfReference.TargetFrame)
+	{
+		return LastPose;
+	}
     //Prevent Tango calls before the system is ready, return null data instead
     if(!(UTangoDevice::Get().IsTangoServiceRunning()) || !TangoARHelpers::DataIsReady())
     {
-        return FTangoPoseData();
+
+		LastFrame = Frame;
+		LastTimestamp = Timestamp;
+		LastFrameOfReference = FrameOfReference;
+        return LastPose = FTangoPoseData();
     }
+	
     
 	//@TODO: See if there's a way to remove the need for this data structure here
 	FTangoPoseData BlueprintFriendlyPoseData;
@@ -177,12 +191,17 @@ FTangoPoseData UTangoDeviceMotion::GetPoseAtTime(FTangoCoordinateFramePair Frame
 	{
 		UE_LOG(TangoPlugin, Warning, TEXT("UTangoDeviceMotion::GetPoseAtTime: TangoService_getPoseAtTime not successful"));
 		//return a generic object
-		return FTangoPoseData();
+		LastTimestamp = Timestamp;
+		LastFrameOfReference = FrameOfReference;
+		return LastPose = FTangoPoseData();
 	}
 	BlueprintFriendlyPoseData = FromCPointer(&Result);
 #endif
+	LastFrame = Frame;
 	TangoSpaceConversions::ModifyPose(BlueprintFriendlyPoseData, SpaceConverter);
-	return BlueprintFriendlyPoseData;
+	LastTimestamp = Timestamp;
+	LastFrameOfReference = FrameOfReference;
+	return LastPose = BlueprintFriendlyPoseData;
 }
 
 bool UTangoDeviceMotion::IsTickable() const
@@ -198,6 +217,7 @@ TStatId UTangoDeviceMotion::GetStatId() const
 
 void UTangoDeviceMotion::Tick(float DeltaTime)
 {
+	Frame++;
 	PoseMutex.Lock();
 	TMap<FTangoCoordinateFramePair, FTangoPoseData> BroadcastTangoPoseDataCopy = BroadcastTangoPoseData;
 	BroadcastTangoPoseData.Empty(RequestedPairs.Num());

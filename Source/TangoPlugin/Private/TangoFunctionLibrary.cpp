@@ -82,6 +82,11 @@ bool UTangoFunctionLibrary::SetTangoRuntimeConfig(FTangoRuntimeConfig Configurat
 	return UTangoDevice::Get().SetTangoRuntimeConfig(Configuration);
 }
 
+void UTangoFunctionLibrary::GetBinaryAreaDescription(const FTangoAreaDescription& AreaDescription, TArray<uint8>& Result, bool& bSuccess)
+{
+	bSuccess = FFileHelper::LoadFileToArray(Result, *AreaDescription.Filename);
+}
+
 void UTangoFunctionLibrary::ConvertTransformFromTango(const FTransform& Transform, ETangoCoordinateFrameType BaseFrame, FTransform& Result)
 {
   TangoSpaceConversions::TangoSpaceConversionPair Converter;

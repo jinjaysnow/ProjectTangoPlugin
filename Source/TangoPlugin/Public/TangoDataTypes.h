@@ -331,6 +331,9 @@ struct TANGOPLUGIN_API FTangoConfig
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "The scaling factor from Tango coordinates (meters) to Unreal coordiantes"))
 		float MetersToWorldScale = 100.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tango", meta = (ToolTip = "The maximum number of points"))
+		int32 MaxPointCloudElements;
+
 };
 USTRUCT(BlueprintType)
 struct TANGOPLUGIN_API FWGS_84_PoseData

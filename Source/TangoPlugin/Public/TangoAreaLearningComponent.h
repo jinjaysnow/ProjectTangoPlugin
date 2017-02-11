@@ -50,6 +50,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Tango|Area Learning", meta = (Latent, WorldContext = "WorldContextObject", LatentInfo = "LatentInfo", Keywords = "ADF, area, learning, description, save, current"))
 		static void	SaveCurrentArea(UObject* WorldContextObject, const FString& Filename, struct FLatentActionInfo LatentInfo, FTangoAreaDescription& Result, bool& bSuccessful);
+
+
 	/*
 	*	This function is used to expose the metadata contained within a specified ADF.
 	*	This metadata includes the position and time that the ADF was created, and the Filename of the ADF.
@@ -79,7 +81,10 @@ public:
 	*/
 	UFUNCTION(Category = "Tango|Area Learning", BlueprintCallable, meta = (ToolTip = "Import an area description file from a given filepath into this device's Tango Core internal ADF repository.", keyword = "ADF, area, learning, import, load"))
 		void ImportADF(FString Filepath, bool& bIsSuccessful);
-
+#if 0
+	//UFUNCTION(Category = "Tango|Area Learning", BlueprintCallable, meta = (Latent, WorldContext = "WorldContextObject", LatentInfo = "LatentInfo", ToolTip = "Import an area description file from a given filepath into this device's Tango Core internal ADF repository.", keyword = "ADF, area, learning, import, load"))
+	//void ImportADF(UObject* WorldContextObject, const FString& Filepath, const FString& UUID, struct LatentActionInfo LatentInfo, FTangoAreaDescription& Result, bool& bIsSuccessful);
+#endif
 	/*
 	*	This function takes an existing, saved ADF within the device's Tango Core ADF repository, and saves the ADF to the file system in the location denoted by the 'Filepath' parameter, e.g. "/sdcard/".
 	* @param Target The Unreal Engine / Tango Area Learning interface object.

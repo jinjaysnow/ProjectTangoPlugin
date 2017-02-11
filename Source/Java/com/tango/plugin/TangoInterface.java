@@ -1,6 +1,7 @@
 package com.projecttango.plugin;
 
 import java.io.File;
+import java.io.IOException;
 import android.net.Uri;
 import android.app.Activity;
 import android.content.Context;
@@ -25,6 +26,8 @@ public class TangoInterface {
     public static final int ARCH_ARM32 = 2;
     public static final int ARCH_X86_64 = 3;
     public static final int ARCH_X86 = 4;
+
+    File cwd;
     
     // Tango Service connection.
     ServiceConnection mTangoServiceConnection = new ServiceConnection()
@@ -59,7 +62,7 @@ public class TangoInterface {
 	private static final String EXTRA_KEY_SOURCEFILE = "SOURCE_FILE";
 	private static final String EXTRA_KEY_DESTINATIONFILE = "DESTINATION_FILE";
 	
-	private static final String INTENT_CLASSPACKAGE = "com.projecttango.tango";
+	private static final String INTENT_CLASSPACKAGE = "com.google.tango";
 	private static final String INTENT_IMPORTEXPORT_CLASSNAME = "com.google.atap.tango.RequestImportExportActivity";
 
 
@@ -136,12 +139,11 @@ public class TangoInterface {
 
     public static native void OnExportRequest(int result);
 
-	public void requestImportPermissions(Activity currentActivity, String Filepath)
+
+        public void requestImportPermissions(Activity currentActivity, String Filepath)
 	{
 		Log.w("TangoLifecycleDebugging", "TangoInterface.Java::requestImportPermissions: Starting function!");
-
 		Log.w("TangoLifecycleDebugging", "Filepath String = " + Filepath);
-				
 		Intent exportIntent = new Intent();
 		exportIntent.setClassName(INTENT_CLASSPACKAGE, INTENT_IMPORTEXPORT_CLASSNAME);
 		exportIntent.putExtra(EXTRA_KEY_SOURCEFILE, Filepath);
@@ -155,10 +157,8 @@ public class TangoInterface {
 
 		Log.w("TangoLifecycleDebugging", "UUID String = " + UUID);
 		Log.w("TangoLifecycleDebugging", "Filepath String = " + Filepath);
-				
 		//Prepare the folder for export
 		getAppSpaceADFFolder(Filepath);
-
 		Intent exportIntent = new Intent();
 		exportIntent.setClassName(INTENT_CLASSPACKAGE, INTENT_IMPORTEXPORT_CLASSNAME);
 		exportIntent.putExtra(EXTRA_KEY_SOURCEUUID, UUID);
@@ -196,21 +196,21 @@ public class TangoInterface {
 			{
 				Log.w("TangoLifecycleDebugging", "Tango Import Intent Activity: Result is Success!");
 				//Toast.makeText(currentActivity, "Tango Import Intent Activity: Result is Success, -1!", Toast.LENGTH_LONG).show();
-                OnImportRequest(-1);
+                                OnImportRequest(-1);
 				return true;
 			}			
 			if (resultCode == 0) 
 			{
 				Log.w("TangoLifecycleDebugging", "Tango Import Intent Activity: Result is Cancelled!");
 				//Toast.makeText(currentActivity, "Tango Import Intent Activity: Result is Cancelled, 0!", Toast.LENGTH_LONG).show();
-                OnImportRequest(0);
+                                OnImportRequest(0);
 				return false;
 			}
 			if (resultCode == 1) 
 			{
 				Log.w("TangoLifecycleDebugging", "Tango Import Intent Activity: Result is User Denied!");
 				//Toast.makeText(currentActivity, "Tango Import Intent Activity: Result is Denied, 1!", Toast.LENGTH_LONG).show();
-                OnImportRequest(1);
+                                OnImportRequest(1);
 				return false;
 			}
 
@@ -225,22 +225,22 @@ public class TangoInterface {
 			{
 				Log.w("TangoLifecycleDebugging", "Tango Export Intent Activity: Result is Success!");
 				//Toast.makeText(currentActivity, "Tango Export Intent Activity: Result is Success, -1!", Toast.LENGTH_LONG).show();
-                OnExportRequest(-1);
+                                OnExportRequest(-1);
 				return true;
 			}			
 			if (resultCode == 0) 
 			{
 				Log.w("TangoLifecycleDebugging", "Tango Export Intent Activity: Result is Cancelled!");
 				//Toast.makeText(currentActivity, "Tango Export Intent Activity: Result is Cancelled, 0!", Toast.LENGTH_LONG).show();
-                OnExportRequest(0);
-                return false;
+                                OnExportRequest(0);
+                                return false;
 			}
 			if (resultCode == 1) 
 			{
 				Log.w("TangoLifecycleDebugging", "Tango Export Intent Activity: Result is User Denied!");
 				//Toast.makeText(currentActivity, "Tango Export Intent Activity: Result is Denied, 1!", Toast.LENGTH_LONG).show();
-                OnExportRequest(1);
-                return false;
+                                OnExportRequest(1);
+                                return false;
 			}
 
 			Toast.makeText(currentActivity, "Tango Export Intent Activity: Result unknown", Toast.LENGTH_LONG).show();
@@ -294,7 +294,7 @@ public class TangoInterface {
         // User doesn't have the latest packagename for TangoCore, fallback to the previous name.
         if (!hasJavaService) {
             intent = new Intent();
-            intent.setClassName("com.projecttango.tango", "com.google.atap.tango.TangoService");
+            intent.setClassName("com.google.tango", "com.google.atap.tango.TangoService");
             hasJavaService = (context.getPackageManager().resolveService(intent, 0) != null);
         }
         

@@ -34,7 +34,7 @@ bool UTangoAreaLearningComponent::IsLearningModeEnabled()
 	return UTangoDevice::Get().IsLearningModeEnabled();
 }
 
-void UTangoAreaLearningComponent::SaveCurrentArea(UObject* WorldContextObject, const FString& Filename, struct FLatentActionInfo LatentInfo, FTangoAreaDescription& Result, bool& bIsSuccessful)
+void UTangoAreaLearningComponent::SaveCurrentArea(UObject* WorldContextObject, const FString& Filename, struct FLatentActionInfo LatentInfo, FTangoAreaDescription& Result,  bool& bIsSuccessful)
 {
 	auto* Ptr = UTangoDevice::Get().GetTangoDeviceAreaLearningPointer();
 	if (Ptr != nullptr)

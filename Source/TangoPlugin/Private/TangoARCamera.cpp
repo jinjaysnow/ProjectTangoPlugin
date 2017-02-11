@@ -21,7 +21,7 @@ UTangoARCamera::~UTangoARCamera()
 {
 }
 
-UTangoARCamera::UTangoARCamera(const FObjectInitializer& Init) : ARScreen(nullptr), Super(Init)
+UTangoARCamera::UTangoARCamera(const FObjectInitializer& Init) : ARScreen(nullptr), bScreenIsVisible(true), Super(Init)
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	bWantsInitializeComponent = true;
@@ -75,7 +75,7 @@ void UTangoARCamera::TickComponent(float DeltaTime, enum ELevelTick TickType, FA
 			TangoARHelpers::GetNearPlane(LowerLeft, UpperRight, NearFar);
 			FVector2D UVShift = TangoARHelpers::GetARUVShift();
 
-			NearFar.Y *= 0.99f;
+			//NearFar.Y *= 0.99f;
 			FVector LL = FVector(NearFar.Y, LowerLeft.X*(NearFar.Y / NearFar.X), LowerLeft.Y*(NearFar.Y / NearFar.X));
 			FVector UR = FVector(NearFar.Y, UpperRight.X*(NearFar.Y / NearFar.X), UpperRight.Y*(NearFar.Y / NearFar.X));
 
@@ -98,19 +98,27 @@ void UTangoARCamera::TickComponent(float DeltaTime, enum ELevelTick TickType, FA
 	}
 	if (ARScreen != nullptr && UTangoDevice::Get().GetTangoDeviceMotionPointer())
 	{
-		FTangoPoseData LatestPose = UTangoDevice::Get().GetTangoDeviceMotionPointer()->GetPoseAtTime(FrameOfReference, 0);
-		//Only move the component if the pose status is valid.
-		if (LatestPose.StatusCode == ETangoPoseStatus::VALID)
+		if (bScreenIsVisible != ARScreen->bVisible)
 		{
-			AActor* Owner = GetOwner();
-			Owner->SetActorLocation(LatestPose.Position);
-			Owner->SetActorRotation(LatestPose.Rotation);
-			//UE_LOG(TangoPlugin, Log, TEXT("Set Pose %s %s, %s"), *Owner->GetName(), *LatestPose.Position.ToString(), *LatestPose.Rotation.ToString());
+			ARScreen->bVisible = bScreenIsVisible;
 		}
-		else
-		{
-			//UE_LOG(TangoPlugin, Warning, TEXT("Camera pose not valid: %d, frame of reference: %d, %d"), (int32)LatestPose.StatusCode, (int32)FrameOfReference.BaseFrame, (int32)FrameOfReference.TargetFrame);
-		}
+		UTangoDevice::Get().GetTangoDeviceImagePointer()->TickByCamera([this](double CameraTimestamp) -> void {
+			//UE_LOG(TangoPlugin, Log, TEXT("Camera: %f"), CameraTimestamp);
+			FTangoPoseData LatestPose = UTangoDevice::Get().GetTangoDeviceMotionPointer()->GetPoseAtTime(FrameOfReference, CameraTimestamp);
+			//Only move the component if the pose status is valid.
+			if (LatestPose.StatusCode == ETangoPoseStatus::VALID)
+			{
+				AActor* Owner = GetOwner();
+				Owner->SetActorLocation(LatestPose.Position);
+				Owner->SetActorRotation(LatestPose.Rotation);
+				//UE_LOG(TangoPlugin, Log, TEXT("Set Pose %s %s, %s"), *Owner->GetName(), *LatestPose.Position.ToString(), *LatestPose.Rotation.ToString());
+			}
+			else
+			{
+				//UE_LOG(TangoPlugin, Warning, TEXT("Camera pose not valid: %d, frame of reference: %d, %d"), (int32)LatestPose.StatusCode, (int32)FrameOfReference.BaseFrame, (int32)FrameOfReference.TargetFrame);
+			}
+		});
+		
 	}
 	else
 	{

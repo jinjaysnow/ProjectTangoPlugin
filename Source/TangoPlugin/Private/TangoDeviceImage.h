@@ -21,8 +21,9 @@ limitations under the License.*/
 #include "TangoDeviceImage.generated.h"
 
 
-static bool bTexturesHaveDataInThem;
-static double ImageBufferTimestamp;
+#if PLATFORM_ANDROID
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnTangoImageBufferAvailable, const TangoImageBuffer*);
+#endif
 
 UCLASS(NotBlueprintable, NotPlaceable, Transient)
 class UTangoDeviceImage : public UObject
@@ -37,7 +38,7 @@ public:
 #endif
 		);
 
-	bool CreateYUVTextures(
+	bool CreateTexture(
 #if PLATFORM_ANDROID
 		TangoConfig Config_
 #endif
@@ -47,18 +48,13 @@ public:
 
 	void TickByDevice();
 
-	UTexture* GetYTexture();
-
-	UTexture * GetCrTexture();
-
-	UTexture * GetCbTexture();
+	void TickByCamera(TFunction<void(double)> OnCameraTimestamp);
 
 	//Tango Image functions
 	bool bIsImageBufferSet;
 	float GetImageBufferTimestamp();
 
 	bool setRuntimeConfig(FTangoRuntimeConfig& RuntimeConfig);
-
 
 private:
 
@@ -79,19 +75,27 @@ private:
 	bool bNewDataAvailable;
 public:
 	
-	bool IsNewDataAvail();
-	void DataSet(double Stamp) { bNewDataAvailable = false; bTexturesHaveDataInThem = true; ImageBufferTimestamp = Stamp; }
-	// hack: workarounds for bugs in TangoService_Experimental_connectTextureIdUnity
-	bool bNeedsAllocation;
-	uint32 YOpenGLPointer;
-	uint32 CrOpenGLPointer;
-	uint32 CbOpenGLPointer;
-	TArray<uint8> Buffer;
-	FCriticalSection BufferLock;
-	bool bUseImageBufferCallback;
+	UPROPERTY(Transient)
+		UTexture* VideoTexture;
+	double GetLastTimestamp()
+	{
+		return LastTimestamp;
+	}
+	uint32 RGBOpenGLPointer; 
 #if PLATFORM_ANDROID
+	FOnTangoImageBufferAvailable OnImageBufferAvailable;
+#endif
+private:
+	
+	bool IsNewDataAvail();
+	void DataSet(double Stamp) { bNewDataAvailable = false;  GameThreadTimestamp = Stamp; LastTimestamp = Stamp; }
+	bool bNeedsAllocation;	
+	double LastTimestamp;
+	double GameThreadTimestamp;
+	
+#if PLATFORM_ANDROID
+	
 	TangoImageBuffer TangoBuffer;
-	void RenderImageBuffer();
-	void CopyImageBuffer(const TangoImageBuffer* Buffer);
+	void OnImageBuffer(const TangoImageBuffer* Buffer);
 #endif
 };

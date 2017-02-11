@@ -28,7 +28,7 @@ void UTangoImageComponent::TickComponent(float DeltaTime, enum ELevelTick TickTy
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	if (UTangoDevice::Get().GetTangoDeviceImagePointer())
 	{
-		if (UTangoDevice::Get().GetTangoDeviceImagePointer()->GetYTexture())
+		if (UTangoDevice::Get().GetTangoDeviceImagePointer()->VideoTexture)
 		{
 			float TimeStamp = UTangoDevice::Get().GetTangoDeviceImagePointer()->GetImageBufferTimestamp();
 			if (TimeStamp != LastBroadCastedTimestamp)
@@ -40,7 +40,7 @@ void UTangoImageComponent::TickComponent(float DeltaTime, enum ELevelTick TickTy
 	}
 }
 
-UTexture* UTangoImageComponent::GetCameraViewYTexture(float& Timestamp, bool& bIsValid)
+UTexture* UTangoImageComponent::GetCameraTexture(float& Timestamp, bool& bIsValid)
 {
 	UTexture * Texture = nullptr;
 	bIsValid = false;
@@ -49,26 +49,10 @@ UTexture* UTangoImageComponent::GetCameraViewYTexture(float& Timestamp, bool& bI
 	if (UTangoDevice::Get().GetTangoDeviceImagePointer())
 	{
 		Timestamp = UTangoDevice::Get().GetTangoDeviceImagePointer()->GetImageBufferTimestamp();
-		Texture = UTangoDevice::Get().GetTangoDeviceImagePointer()->GetYTexture();
+		Texture = UTangoDevice::Get().GetTangoDeviceImagePointer()->VideoTexture;
 		bIsValid = Texture != nullptr;
 	}
 
-	return Texture;
-}
-
-UTexture* UTangoImageComponent::GetCameraViewUVTexture(float& Timestamp, bool& bIsValid)
-{
-	UTexture * Texture = nullptr;
-	bIsValid = false;
-	Timestamp = 0.0;
-
-	if (UTangoDevice::Get().GetTangoDeviceImagePointer())
-	{
-		Timestamp = UTangoDevice::Get().GetTangoDeviceImagePointer()->GetImageBufferTimestamp();
-		Texture = UTangoDevice::Get().GetTangoDeviceImagePointer()->GetCrTexture();
-		bIsValid = Texture != nullptr;
-	}
-	
 	return Texture;
 }
 

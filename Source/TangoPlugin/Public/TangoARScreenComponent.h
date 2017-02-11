@@ -42,5 +42,6 @@ private:
 	bool bInitializedMaterial = false;
 
 	UStaticMesh* FoundMesh;
-	UMaterial* FoundMaterial;
+	UMaterial* YUVMaterial;
+	UMaterial* RGBMaterial;
 };

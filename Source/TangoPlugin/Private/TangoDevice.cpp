@@ -27,7 +27,7 @@ limitations under the License.*/
 
 UTangoARInterface::UTangoARInterface(const FObjectInitializer& Init) : Super(Init) {}
 
-class RunOnMainThread : public FTickableGameObject
+class FRunOnGameThread : public FTickableGameObject
 {
 public:
 	virtual void Tick(float DeltaSeconds) override
@@ -45,27 +45,27 @@ public:
 	{
 		return StatId;
 	}
-	virtual ~RunOnMainThread() {}
-	RunOnMainThread(const TFunction<void()> InRun) : Run(InRun) {}
+	virtual ~FRunOnGameThread() {}
+	FRunOnGameThread(const TFunction<void()> InRun) : Run(InRun) {}
 private:
 	TFunction<void()> Run;
 	static TStatId StatId;
 
 };
 
-TStatId RunOnMainThread::StatId;
+TStatId FRunOnGameThread::StatId;
 
-void UTangoDevice::RunOnMainThread(const TFunction<void()> Runnable)
+void UTangoDevice::RunOnGameThread(const TFunction<void()> Runnable)
 {
-	new ::RunOnMainThread(Runnable);
+	new FRunOnGameThread(Runnable);
 }
 
 
-class RunOffMainThread : public FRunnable
+class FRunOffGameThread : public FRunnable
 {
 	TFunction<void()> Runnable;
 public:
-	RunOffMainThread(const TFunction<void()> InRunnable): Runnable(InRunnable)
+	FRunOffGameThread(const TFunction<void()> InRunnable): Runnable(InRunnable)
 	{
 	}
 
@@ -76,9 +76,9 @@ public:
 	}
 };
 
-void UTangoDevice::RunOffMainThread(const TFunction<void()> Runnable)
+void UTangoDevice::RunOffGameThread(const TFunction<void()> Runnable)
 {
-	FRunnableThread::Create(new ::RunOffMainThread(Runnable), TEXT("RunOffMainThread"), true, true);
+	FRunnableThread::Create(new FRunOffGameThread(Runnable), TEXT("RunOffGameThread"), true, true);
 }
 
 UTangoDevice* UTangoDevice::Instance;
@@ -181,11 +181,7 @@ void UTangoDevice::DeallocateResources()
 	}
 	DePopulateAppContext();
 #endif
-	if (GetTangoDevicePointCloudPointer() != nullptr)
-	{
-		delete PointCloudHelper;
-		PointCloudHelper = nullptr;
-	}
+	
 	if (GetTangoDeviceMotionPointer() != nullptr)
 	{
 		MotionHelper = nullptr;
@@ -194,6 +190,12 @@ void UTangoDevice::DeallocateResources()
 	{
 		GetTangoDeviceImagePointer()->DisconnectCallback();
 		ImageHelper = nullptr;
+	}
+	if (GetTangoDevicePointCloudPointer() != nullptr)
+	{
+		TangoDevicePointCloud *Tmp = PointCloudHelper;
+		PointCloudHelper = nullptr;
+		delete Tmp;
 	}
 	delete AreaHelper;
 	AreaHelper = nullptr;
@@ -454,20 +456,32 @@ bool UTangoDevice::ApplyConfig()
 	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_color_camera", CurrentConfig.bEnableColorCameraCapabilities) == TANGO_SUCCESS	&& bSuccess;
 	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_color_mode_auto", CurrentConfig.bColorModeAuto) == TANGO_SUCCESS	&& bSuccess;
 	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_depth", CurrentConfig.bEnableDepthCapabilities) == TANGO_SUCCESS	&& bSuccess;
+	if (CurrentConfig.bEnableDepthCapabilities)
+	{
+		bSuccess = DoTangoConfigSet(&TangoConfig_setInt32, Config_, "config_depth_mode", (int32)TANGO_POINTCLOUD_XYZC) == TANGO_SUCCESS && bSuccess;
+	}
 	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_high_rate_pose", CurrentConfig.bHighRatePose) == TANGO_SUCCESS	&& bSuccess;
+	
+	
 	if (CurrentConfig.bEnableDriftCorrection)
 	{
-		bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_drift_correction", CurrentConfig.bEnableDriftCorrection) == TANGO_SUCCESS	&& bSuccess;
+		//bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_drift_correction", CurrentConfig.bEnableDriftCorrection) == TANGO_SUCCESS	&& bSuccess;
+		if (DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_use_pgs_instead_of_viwls", false) != TANGO_SUCCESS)
+		{
+			UE_LOG(TangoPlugin, Error, TEXT("UTangoDevice: config_use_pgs_instead_of_viwls=false failed"));
+		}
+
 	}
-	else
+	if (CurrentConfig.bEnableLearningMode)
 	{
-		bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_learning_mode", CurrentConfig.bEnableLearningMode) == TANGO_SUCCESS	&& bSuccess;
+		bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_learning_mode", CurrentConfig.bEnableLearningMode) == TANGO_SUCCESS && bSuccess;
 	}
 	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_low_latency_imu_integration", CurrentConfig.bLowLatencyIMUIntegration) == TANGO_SUCCESS	&& bSuccess;
 	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_enable_motion_tracking", CurrentConfig.bEnableMotionTracking) == TANGO_SUCCESS	&& bSuccess;
 	bSuccess = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_smooth_pose", CurrentConfig.bSmoothPose) == TANGO_SUCCESS	&& bSuccess;
 	bSuccess = DoTangoConfigSet(&TangoConfig_setInt32, Config_, "config_color_exp", CurrentConfig.ColorExposure) == TANGO_SUCCESS	&& bSuccess;
 	bSuccess = DoTangoConfigSet(&TangoConfig_setInt32, Config_, "config_color_iso", CurrentConfig.ColorISO) == TANGO_SUCCESS	&& bSuccess;
+	bSuccess = TangoConfig_getInt32(Config_, "max_point_cloud_elements", &CurrentConfig.MaxPointCloudElements) == TANGO_SUCCESS && bSuccess;
 	if (CurrentConfig.bUseCloudAdf)
 	{
 		bool bEnabledCloudAdf = DoTangoConfigSet(&TangoConfig_setBool, Config_, "config_experimental_use_cloud_adf", CurrentConfig.bUseCloudAdf) == TANGO_SUCCESS;
@@ -687,9 +701,7 @@ void UTangoDevice::BindAndCompleteConnectionToService(JNIEnv* Env, jobject IBind
 	}
 	ConnectEventCallback();//Activate Events
 	UE_LOG(TangoPlugin, Log, TEXT("UTangoDevice::BindAndCompleteConnectionToService: FINISHED"));
-	RunOnMainThread([this]()-> void {
-		BroadCastConnect();
-	});
+	BroadCastConnect();
 	//Call a second time to make depth disabling at startup work.
 	if (!CurrentRuntimeConfig.bEnableDepth && CurrentConfig.bEnableDepthCapabilities)
 	{
@@ -714,7 +726,9 @@ void UTangoDevice::DisconnectTangoService(bool bByAppServicePause)
 
 		//Mark the current connection state and broadcast the disconnection
 		ConnectionState = bByAppServicePause ? DISCONNECTED_BY_APPSERVICEPAUSE : DISCONNECTED;
-		RunOnMainThread([this]() -> void { BroadCastDisconnect(); });
+		UTangoDevice::Get().RunOnGameThread([this]()->void { // send event on next tick
+			BroadCastDisconnect();
+		});
 	}
 	else
 	{

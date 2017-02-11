@@ -53,6 +53,11 @@ public:
 
 private:
 	bool bIsProperlyInitialized = false;
+	FTangoCoordinateFramePair LastFrameOfReference;
+	FTangoPoseData LastPose;
+	float LastTimestamp;
+	int64 Frame;
+	int64 LastFrame;
 
 #if PLATFORM_ANDROID
 	void OnPoseAvailable(const TangoPoseData * Pose);

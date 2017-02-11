@@ -47,9 +47,8 @@ limitations under the License.
     <addPermission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <addPermission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
-    <!--<addElements tag="application">
-			<meta-data android:name="com.projecttango.bTangoAreaLearningEnabled" android:value="$B(bTangoAreaLearningEnabled)"/>
-		</addElements>-->
+    <addElements tag="application">
+    </addElements>
 
 	</androidManifestUpdates>
 
@@ -57,15 +56,34 @@ limitations under the License.
         Note: We no longer need to copy any .jar files across- we now only use the .so file already present on the Tango device. -->
 	<resourceCopies>
     <log text="TangoPlugin Plugin Android Source Code and Library Resource Copies"/>
+    <log text="PluginDir: $S(PluginDir)"/>
     <copyDir src="$S(PluginDir)/../Java/com" dst="$S(BuildDir)/src/com" />
-	</resourceCopies> 
+    <isArch arch="armeabi-v7a">
+      <copyFile src="$S(PluginDir)/../../ThirdParty/tango_support_api/lib/armeabi-v7a/libtango_support_api.so"
+						dst="$S(BuildDir)/libs/armeabi-v7a/libtango_support_api.so" />
+      <copyFile src="$S(PluginDir)/../../ThirdParty/tango_3d_reconstruction/lib/armeabi-v7a/libtango_3d_reconstruction.so"
+      dst="$S(BuildDir)/libs/armeabi-v7a/libtango_3d_reconstruction.so" />
+    </isArch>
+    <isArch arch="arm64-v8a">
+      <copyFile src="$S(PluginDir)/../../ThirdParty/tango_support_api/lib/arme64-v8a/libtango_support_api.so"
+						dst="$S(BuildDir)/libs/arm64-v8a/libtango_support_api.so" />
+      <copyFile src="$S(PluginDir)/../../ThirdParty/tango_3d_reconstruction/lib/arm64-v8a/libtango_3d_reconstruction.so"
+      dst="$S(BuildDir)/libs/arm64-v8a/libtango_3d_reconstruction.so" />
+    </isArch>
+    <isArch arch="x86">
+      <copyFile src="$S(PluginDir)/../../ThirdParty/tango_support_api/lib/x86/libtango_support_api.so"
+						dst="$S(BuildDir)/libs/x86/libtango_support_api.so" />
+      <copyFile src="$S(PluginDir)/../../ThirdParty/tango_3d_reconstruction_/lib/x86/libtango_3d_reconstruction.so"
+      dst="$S(BuildDir)/libs/x86/libtango_3d_reconstruction.so" />
+    </isArch>
+  </resourceCopies> 
   
 	<!-- Import the Tango Interface Class into the GameActivity. -->
   <!-- Note that the java modules referenced here will have to be copied across using the resourceCopies tag, or a 'symbol not found' error will occur.-->
 	<gameActivityImportAdditions>
 		<insert>
 			
-			import com.projecttango.plugin.TangoInterface;
+            import com.projecttango.plugin.TangoInterface;
             import android.util.Log;
 			
 		</insert>

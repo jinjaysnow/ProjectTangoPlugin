@@ -50,6 +50,11 @@ extern "C"
         UEvent.Message = FString::FromInt((int) Result + 1);
         
         UTangoDevice::Get().PushTangoEvent(UEvent);
+		TangoDeviceAreaLearning* AreaLearning = UTangoDevice::Get().GetTangoDeviceAreaLearningPointer();
+		if (AreaLearning != nullptr)
+		{
+			AreaLearning->OnExportResult(UEvent);
+		}
     }
     
     //JNI Import function: Called upon ADF Import requests, returns the request result
@@ -67,6 +72,11 @@ extern "C"
         UEvent.Message = FString::FromInt((int) Result + 1);
         
         UTangoDevice::Get().PushTangoEvent(UEvent);
+		TangoDeviceAreaLearning* AreaLearning = UTangoDevice::Get().GetTangoDeviceAreaLearningPointer();
+		if (AreaLearning != nullptr)
+		{
+			AreaLearning->OnImportResult(UEvent);
+		}
     }
 }
 #endif

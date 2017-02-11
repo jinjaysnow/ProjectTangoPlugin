@@ -20,8 +20,8 @@ limitations under the License.*/
 void FSaveAreaDescriptionAction::Run()
 {
 	auto* Ptr = UTangoDevice::Get().GetTangoDeviceAreaLearningPointer();
+	Ptr->CurrentSaveAction = this;
 	Result = Ptr->SaveCurrentArea(Filename, bIsSuccessful);
-	PercentDone = 1.0f;
 }
 
 //Required includes for making the calls to Java functions
@@ -30,8 +30,41 @@ void FSaveAreaDescriptionAction::Run()
 #include "AndroidApplication.h"
 #endif
 
+FString TangoDeviceAreaLearning::AreaLearningDir;
+
+void TangoDeviceAreaLearning::OnExportResult(const FTangoEvent& Event)
+{
+	FSaveAreaDescriptionAction* Action = CurrentSaveAction;
+	CurrentSaveAction = nullptr;
+	if (Action != nullptr)
+	{
+		// ugh
+		int32 Result = FCString::Atoi(*Event.Message);
+		Action->SetIsSuccessful(Result == 0);
+		Action->UpdatePercentDone(1.0f);
+	}
+}
+
+void TangoDeviceAreaLearning::OnImportResult(const FTangoEvent& Event)
+{
+
+}
+
 TangoDeviceAreaLearning::TangoDeviceAreaLearning()
 {
+#if PLATFORM_ANDROID
+	if (AreaLearningDir.Len() == 0)
+	{
+		// Doesn't work:
+		// FString Dir(FPaths::GameSavedDir() / TEXT("AreaLearning"));
+		// AreaLearningDir = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*(FPaths::GameSavedDir() / "AreaLearning"));
+		// so hardcoded for now:
+		FString GameName = FApp::GetGameName();
+		AreaLearningDir = FString(FString("/sdcard") / "UE4Game" / GameName / GameName / "AreaLearning");
+		UE_LOG(TangoPlugin, Log, TEXT("TangoDeviceAreaLearning:: Area Learning Dir %s"), *AreaLearningDir);
+		IFileManager::Get().MakeDirectory(*AreaLearningDir);
+	}
+#endif
 }
 
 TangoDeviceAreaLearning::~TangoDeviceAreaLearning()
@@ -62,7 +95,7 @@ FTangoAreaDescription TangoDeviceAreaLearning::SaveCurrentArea(FString Filename,
 	FTangoAreaDescription SavedData;
 	bIsSuccessful = false;
 
-	if (!UTangoDevice::Get().IsLearningModeEnabled())
+	if (!UTangoDevice::Get().IsUsingAdf())
 	{
 		UE_LOG(TangoPlugin, Warning, TEXT(" TangoDeviceAreaLearning::SaveCurrentArea: Attempted to save area description when learning mode is disabled!"));
 	}
@@ -80,25 +113,39 @@ FTangoAreaDescription TangoDeviceAreaLearning::SaveCurrentArea(FString Filename,
 		TangoUUID UUID;
 		TangoAreaDescriptionMetadata Metadata;
 		const char* Key = "name"; //key for filename
-
-		std::string Converted = TCHAR_TO_UTF8(*Filename);
-		const char* Value = Converted.c_str();
+		FString AbsoluteFilename(AreaLearningDir/ Filename);
+		const char* ExportFilename = TCHAR_TO_UTF8(*AbsoluteFilename);
+		UE_LOG(TangoPlugin, Error, TEXT(" TangoDeviceAreaLearning::SaveCurrentArea: ExportFilename: %s"), *AbsoluteFilename);
+		const char* Value = ExportFilename;
 
 		if (TangoService_saveAreaDescription(&UUID) != TANGO_SUCCESS)
 		{
-			UE_LOG(TangoPlugin, Warning, TEXT(" TangoDeviceAreaLearning::SaveCurrentArea: Save was not successful"));
+			UE_LOG(TangoPlugin, Error, TEXT(" TangoDeviceAreaLearning::SaveCurrentArea: Save was not successful"));
 		}
 		else if (TangoService_getAreaDescriptionMetadata(UUID, &Metadata) != TANGO_SUCCESS
-			|| TangoAreaDescriptionMetadata_set(Metadata, Key, Filename.Len(), Value) != TANGO_SUCCESS
+			|| TangoAreaDescriptionMetadata_set(Metadata, Key, strlen(Value), Value) != TANGO_SUCCESS
 			|| TangoService_saveAreaDescriptionMetadata(UUID, Metadata) != TANGO_SUCCESS)
 		{
-			UE_LOG(TangoPlugin, Warning, TEXT(" TangoDeviceAreaLearning::SaveCurrentArea: Save occurred but filename was not properly set for UUID: %s"), UUID);
+			UE_LOG(TangoPlugin, Error, TEXT(" TangoDeviceAreaLearning::SaveCurrentArea: Save occurred but filename was not properly set for UUID: %s"), UUID);
 		}
 		else
 		{
-			bIsSuccessful = true;
-			//CurrentADFFile = FString(UUID); //@TODO: Update Config struct in TangoDevice?
-			SavedData = FTangoAreaDescription(FString(UUID), Filename);
+			bool bExportSuccessful = true;
+			if (true)
+			{
+				bExportSuccessful = false;
+				UTangoDevice::Get().ExportCurrentArea(UUID, ExportFilename, bExportSuccessful);
+			}
+			if (!bExportSuccessful)
+			{
+				UE_LOG(TangoPlugin, Error, TEXT("ADF Export failed for %s"), *FString(ExportFilename));
+			}
+			else
+			{
+				bIsSuccessful = true;
+				//CurrentADFFile = FString(UUID); //@TODO: Update Config struct in TangoDevice?
+				SavedData = FTangoAreaDescription(FString(UUID), FString(ExportFilename));
+			}
 		}
 #endif
 	}

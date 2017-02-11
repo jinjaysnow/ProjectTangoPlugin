@@ -21,7 +21,7 @@ UTangoARScreenComponent::UTangoARScreenComponent() : Super()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	auto MeshFinder = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("StaticMesh'/TangoPlugin/TangoPlane.TangoPlane'"));
-	auto MaterialFinder = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/TangoPlugin/TangoCameraPassthroughMaterial.TangoCameraPassthroughMaterial'"));
+	auto RGBMaterialFinder = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/TangoPlugin/TangoCameraPassthroughRGBAMaterial.TangoCameraPassthroughRGBAMaterial'"));
 	if (MeshFinder.Succeeded())
 	{
 		FoundMesh = MeshFinder.Object;
@@ -31,15 +31,16 @@ UTangoARScreenComponent::UTangoARScreenComponent() : Super()
 		FoundMesh = nullptr;
 		UE_LOG(TangoPlugin, Warning, TEXT("UTangoARScreenComponent::UTangoARScreenComponent: Unable to retrieve mesh from common folder!"));
 	}
-	if (MaterialFinder.Succeeded())
+	if (RGBMaterialFinder.Succeeded())
 	{
-		FoundMaterial = MaterialFinder.Object;
+		RGBMaterial = RGBMaterialFinder.Object;
 	}
 	else
 	{
-		FoundMaterial = nullptr;
+		RGBMaterial = nullptr;
 		UE_LOG(TangoPlugin, Warning, TEXT("UTangoARScreenComponent::UTangoARScreenComponent: Unable to retrieve material from common folder!"));
 	}
+	bCastDynamicShadow = false;
 
 }
 
@@ -47,7 +48,7 @@ float UTangoARScreenComponent::GetLatestImageTimeStamp()
 {
 	if (UTangoDevice::Get().GetTangoDeviceImagePointer())
 	{
-		return UTangoDevice::Get().GetTangoDeviceImagePointer()->GetImageBufferTimestamp();
+		return UTangoDevice::Get().GetTangoDeviceImagePointer()->GetLastTimestamp();
 	}
 	else
 	{
@@ -79,34 +80,21 @@ void UTangoARScreenComponent::SetupMaterial()
 		}
 	}
 
-
+	UMaterial* FoundMaterial = RGBMaterial;
 	if (FoundMaterial)
 	{
 		auto Inst = UMaterialInstanceDynamic::Create(FoundMaterial, this);
-
-		Inst->SetTextureParameterValue(FName("PackedYMaskTexture"), UTangoDevice::Get().GetTangoDeviceImagePointer()->GetYTexture());
-		Inst->SetTextureParameterValue(FName("PackedUVMaskTexture"), UTangoDevice::Get().GetTangoDeviceImagePointer()->GetCrTexture());
-		auto Intrin = UTangoDevice::Get().GetCameraIntrinsics(ETangoCameraType::COLOR);
-		Inst->SetVectorParameterValue(FName("CameraMaterialVector"), FLinearColor(0, 0, Intrin.Width, Intrin.Height));
-		Inst->SetVectorParameterValue(FName("Intrinsics"), FLinearColor(Intrin.Cx, Intrin.Cy, Intrin.Fx, Intrin.Fy));
-		if (Intrin.Distortion.Num() >= 3 || Intrin.CalibrationType != ETangoCalibrationType::POLYNOMIAL_3_PARAMETERS)
-		{
-			Inst->SetVectorParameterValue(FName("Distortion"), FLinearColor(Intrin.Distortion[0], Intrin.Distortion[1], Intrin.Distortion[2]));
-		}
-		else
-		{
-			UE_LOG(TangoPlugin, Warning, TEXT("UTangoARScreenComponent::SetupMaterial: Unable to retrieve distortion values!"));
-		}
+		Inst->SetTextureParameterValue(FName("VideoTexture"), UTangoDevice::Get().GetTangoDeviceImagePointer()->VideoTexture);
 		SetMaterial(0, Inst);
 		bInitializedMaterial = true;
 		UE_LOG(TangoPlugin, Log, TEXT("UTangoARScreenComponent::SetupMaterial: Success!"));
-		return;
 	}
 	else
 	{
 		UE_LOG(TangoPlugin, Error, TEXT("UTangoARScreenComponent::SetupMaterial: Material could not be located!"));
 		return;
 	}
+	
 }
 
 void UTangoARScreenComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
@@ -115,7 +103,7 @@ void UTangoARScreenComponent::TickComponent(float DeltaTime, enum ELevelTick Tic
 	{
 		if (UTangoDevice::Get().GetTangoDeviceImagePointer())
 		{
-			if (UTangoDevice::Get().GetTangoDeviceImagePointer()->GetYTexture())
+			if (UTangoDevice::Get().GetTangoDeviceImagePointer()->VideoTexture && UTangoDevice::Get().GetTangoDeviceImagePointer()->GetLastTimestamp() != 0)
 			{
 				SetupMaterial();
 			}
