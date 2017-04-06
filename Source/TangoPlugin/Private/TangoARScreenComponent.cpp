@@ -21,7 +21,7 @@ UTangoARScreenComponent::UTangoARScreenComponent() : Super()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	auto MeshFinder = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("StaticMesh'/TangoPlugin/TangoPlane.TangoPlane'"));
-	auto RGBMaterialFinder = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/TangoPlugin/TangoCameraPassthroughRGBAMaterial.TangoCameraPassthroughRGBAMaterial'"));
+	auto RGBMaterialFinder = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("Material'/TangoPlugin/TangoCameraPassthroughMaterial.TangoCameraPassthroughMaterial'"));
 	if (MeshFinder.Succeeded())
 	{
 		FoundMesh = MeshFinder.Object;
